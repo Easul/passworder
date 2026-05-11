@@ -88,15 +88,23 @@ window.PassworderPreviewMethods = {
     try {
       let att = this.getNoteAttachment(attachmentId);
       if (!att) {
+        const noteId = this.currentPreviewNote?.id || this.currentNoteId;
+        if (!noteId) return this.showToast('error', '无法获取附件信息');
         try {
-          const attachments = await this.api(`/files/${this.currentPreviewNote?.id || this.currentNoteId}/attachments`);
-          att = attachments?.find(a => a.id === attachmentId);
+          const attachments = await this.api(`/files/${noteId}/attachments`);
+          if (attachments) {
+            att = attachments.find(a => a.id === attachmentId);
+            if (att && noteId) {
+              this.noteAttachments[noteId] = attachments;
+            }
+          }
         } catch (e) {
           console.error('Failed to fetch attachment info:', e);
         }
       }
       if (!att) return this.showToast('error', '附件信息不存在，请刷新页面');
-      if (fileType === 'image') {
+      const type = (fileType || '').toLowerCase();
+      if (type.includes('image')) {
         const res = await fetch(`/api/note-attachments/${attachmentId}/preview`, { headers: this.token ? { 'Authorization': this.token } : {} });
         if (!res.ok) throw new Error('预览失败');
         const blob = await res.blob();
@@ -106,12 +114,12 @@ window.PassworderPreviewMethods = {
         this.currentPreviewUrl = url;
         img.src = url;
         this.openModal('image-preview-modal');
-      } else if (fileType === 'archive') {
+      } else if (type.includes('zip') || type.includes('rar') || type.includes('7z')) {
         await this.previewArchive(att);
-      } else if (fileType === 'document') {
-        const ext = att.originalName ? att.originalName.split('.').pop().toLowerCase() : '';
-        if (ext === 'pdf') await this.previewPDF(attachmentId, att.originalName);
-        else await this.previewDocument(att);
+      } else if (type.includes('pdf')) {
+        await this.previewPDF(attachmentId, att.originalName);
+      } else if (type.includes('word') || type.includes('document') || type.includes('text') || type.includes('excel') || type.includes('sheet')) {
+        await this.previewDocument(att);
       } else {
         this.downloadNoteAttachment(attachmentId);
       }
@@ -356,6 +364,7 @@ window.PassworderPreviewMethods = {
 
     try {
       const attachments = await this.api(`/files/${noteId}/attachments`);
+      this.noteAttachments[noteId] = attachments || [];
       if (!attachments || attachments.length === 0) {
         attachmentsContainer.style.display = 'none';
         return;
