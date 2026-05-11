@@ -79,7 +79,7 @@ func (s *PersonalFileService) Create(title, remarks, body, bodyFormat string, he
 	return f, nil
 }
 
-func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat string, header *multipart.FileHeader, src multipart.File, createdAt, updatedAt int64) (*model.PersonalFile, error) {
+func (s *PersonalFileService) CreateImported(id int64, title, remarks, body, bodyFormat string, header *multipart.FileHeader, src multipart.File, createdAt, updatedAt int64) (*model.PersonalFile, error) {
 	bodyFormat, err := normalizeBodyFormat(bodyFormat)
 	if err != nil {
 		return nil, err
@@ -115,6 +115,7 @@ func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat st
 	}
 
 	f := &model.PersonalFile{
+		ID:           id,
 		Title:        title,
 		Remarks:      remarks,
 		Body:         body,
@@ -129,7 +130,7 @@ func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat st
 		UpdatedAt:    updatedAt,
 	}
 
-	if err := s.repo.Create(f); err != nil {
+	if err := s.repo.CreateImported(f); err != nil {
 		if storedName != "" {
 			s.store.DeletePersonalFile(storedName)
 		}

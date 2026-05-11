@@ -59,6 +59,7 @@ func (h *ImportExportHandler) importAccounts(manifest ExportData, categoryMap ma
 	}
 
 	accountsImported := 0
+	existingAccounts, _ := h.accountService.List()
 	for _, acc := range manifest.Accounts {
 		newCatID := categoryMap[acc.CategoryID]
 		if newCatID == 0 {
@@ -69,6 +70,7 @@ func (h *ImportExportHandler) importAccounts(manifest ExportData, categoryMap ma
 		}
 
 		account := &model.Account{
+			ID:                acc.ID,
 			CategoryID:        newCatID,
 			Title:             acc.Title,
 			Website:           acc.Website,
@@ -93,19 +95,42 @@ func (h *ImportExportHandler) importAccounts(manifest ExportData, categoryMap ma
 		account.ReminderPeriodValue = acc.ReminderPeriodValue
 		account.RemindAt, _ = h.reminderService.NormalizeSchedule(account.RemindAt, acc.ReminderPeriodType, acc.ReminderPeriodValue)
 
+		existingAccount, _ := h.accountService.Get(acc.ID)
+		if existingAccount == nil {
+			for i := range existingAccounts {
+				candidate := existingAccounts[i]
+				if candidate.Title == acc.Title && candidate.Website == acc.Website && candidate.Username == acc.Username && candidate.Email == acc.Email && candidate.CreatedAt == acc.CreatedAt {
+					existingAccount = &candidate
+					account.ID = candidate.ID
+					break
+				}
+			}
+		}
 		var createErr error
 		if acc.Password != "" {
-			createErr = h.accountService.Create(account, acc.Password)
+			if existingAccount != nil {
+				createErr = h.accountService.UpdateImported(account, acc.Password)
+			} else {
+				createErr = h.accountService.CreateImportedWithPassword(account, acc.Password)
+			}
 		} else if acc.PasswordEncrypted != "" {
 			decoded, err := base64.StdEncoding.DecodeString(acc.PasswordEncrypted)
 			if err == nil {
 				account.PasswordEncrypted = decoded
-				createErr = h.accountService.CreateImported(account)
+				if existingAccount != nil {
+					createErr = h.accountService.UpdateImported(account, "")
+				} else {
+					createErr = h.accountService.CreateImported(account)
+				}
 			} else {
 				createErr = err
 			}
 		} else {
-			createErr = h.accountService.Create(account, "")
+			if existingAccount != nil {
+				createErr = h.accountService.UpdateImported(account, "")
+			} else {
+				createErr = h.accountService.CreateImportedWithPassword(account, "")
+			}
 		}
 
 		if createErr == nil {
@@ -142,19 +167,29 @@ func (h *ImportExportHandler) buildPrimaryFile(note ExportNote, zr *zip.Reader) 
 
 func (h *ImportExportHandler) importNotes(manifest ExportData, zr *zip.Reader) int {
 	notesImported := 0
+	existingNotes, _ := h.personalFileService.List()
 	for _, note := range manifest.Notes {
 		var newNote *model.PersonalFile
 		var err error
 
 		existingNote, _ := h.personalFileService.Get(note.ID)
+		if existingNote == nil {
+			for i := range existingNotes {
+				candidate := existingNotes[i]
+				if candidate.Title == note.Title && candidate.Remarks == note.Remarks && candidate.Body == note.Body && candidate.BodyFormat == note.BodyFormat && candidate.OriginalName == note.OriginalName && candidate.CreatedAt == note.CreatedAt {
+					existingNote = &candidate
+					break
+				}
+			}
+		}
 		if existingNote != nil {
-			if err := h.personalFileService.HardDeleteNote(note.ID); err != nil {
+			if err := h.personalFileService.HardDeleteNote(existingNote.ID); err != nil {
 				continue
 			}
 		}
 
 		primaryHeader, primaryFile := h.buildPrimaryFile(note, zr)
-		newNote, err = h.personalFileService.CreateImported(note.Title, note.Remarks, note.Body, note.BodyFormat, primaryHeader, primaryFile, note.CreatedAt, note.UpdatedAt)
+		newNote, err = h.personalFileService.CreateImported(note.ID, note.Title, note.Remarks, note.Body, note.BodyFormat, primaryHeader, primaryFile, note.CreatedAt, note.UpdatedAt)
 		if err != nil {
 			continue
 		}

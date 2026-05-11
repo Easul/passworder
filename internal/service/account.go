@@ -31,7 +31,16 @@ func (s *AccountService) Create(a *model.Account, plainPassword string) error {
 }
 
 func (s *AccountService) CreateImported(a *model.Account) error {
-	return s.repo.Create(a)
+	return s.repo.CreateImported(a)
+}
+
+func (s *AccountService) CreateImportedWithPassword(a *model.Account, plainPassword string) error {
+	encrypted, err := crypto.Encrypt(plainPassword, s.cryptoKey)
+	if err != nil {
+		return err
+	}
+	a.PasswordEncrypted = []byte(encrypted)
+	return s.repo.CreateImported(a)
 }
 
 func (s *AccountService) Update(a *model.Account, plainPassword string) error {
@@ -43,6 +52,17 @@ func (s *AccountService) Update(a *model.Account, plainPassword string) error {
 		a.PasswordEncrypted = []byte(encrypted)
 	}
 	return s.repo.Update(a)
+}
+
+func (s *AccountService) UpdateImported(a *model.Account, plainPassword string) error {
+	if plainPassword != "" {
+		encrypted, err := crypto.Encrypt(plainPassword, s.cryptoKey)
+		if err != nil {
+			return err
+		}
+		a.PasswordEncrypted = []byte(encrypted)
+	}
+	return s.repo.UpdateImported(a)
 }
 
 func (s *AccountService) Delete(id int64) error {

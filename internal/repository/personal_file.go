@@ -11,6 +11,9 @@ const (
 	personalFileCreateSQL = `INSERT INTO personal_files 
 		(title, remarks, body, body_format, original_name, stored_name, mime_type, size_bytes, sha256, file_type, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	personalFileCreateImportedSQL = `INSERT INTO personal_files 
+		(id, title, remarks, body, body_format, original_name, stored_name, mime_type, size_bytes, sha256, file_type, created_at, updated_at) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	personalFileUpdateTitleSQL              = `UPDATE personal_files SET title = ?, updated_at = ? WHERE id = ?`
 	personalFileUpdateBodySQL               = `UPDATE personal_files SET body = ?, body_format = ?, updated_at = ? WHERE id = ?`
 	personalFileUpdateSQL                   = `UPDATE personal_files SET title = ?, remarks = ?, body = ?, body_format = ?, updated_at = ? WHERE id = ?`
@@ -42,6 +45,11 @@ func (r *PersonalFileRepository) Create(f *model.PersonalFile) error {
 	}
 	f.ID, _ = result.LastInsertId()
 	return nil
+}
+
+func (r *PersonalFileRepository) CreateImported(f *model.PersonalFile) error {
+	_, err := r.db.Exec(personalFileCreateImportedSQL, f.ID, f.Title, f.Remarks, f.Body, f.BodyFormat, f.OriginalName, f.StoredName, f.MimeType, f.SizeBytes, f.Sha256, f.FileType, f.CreatedAt, f.UpdatedAt)
+	return err
 }
 
 func (r *PersonalFileRepository) UpdateTitle(id int64, title string) error {
