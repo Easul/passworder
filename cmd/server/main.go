@@ -18,7 +18,7 @@ var staticFS embed.FS
 //go:embed all:migrations/*.sql
 var migrationsFS embed.FS
 
-const Version = "v2.0.0"
+const Version = "v1.0.1"
 
 func main() {
 	flags := parseServerFlags()
