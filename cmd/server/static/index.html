@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <div id="app">
+    <div id="loading-mask" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity 0.3s"><div style="text-align:center"><div style="font-size:3rem;margin-bottom:16px">🔐</div><div style="color:var(--text-secondary)">加载中...</div></div></div>
+    <div id="app" style="visibility:hidden">
         <div id="setup-page" class="page auth-page">
             <div class="auth-box card">
                 <div class="auth-logo">🔐</div>
@@ -356,8 +357,19 @@
                     <h3 class="modal-title" id="note-view-title">笔记内容</h3>
                     <button type="button" class="modal-close" onclick="Passworder.closeModal('note-view-modal')">×</button>
                 </div>
-                <div class="modal-body" style="max-height:70vh;overflow:auto">
-                    <div id="note-view-content"></div>
+                <div class="modal-body" style="max-height:70vh;overflow:auto;padding:0">
+                    <div class="note-view-wrapper">
+                        <div class="note-view-header">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="Passworder.copyNoteContent()" title="复制原始内容">
+                                📋 复制内容
+                            </button>
+                        </div>
+                        <div id="note-view-content" class="note-view-content"></div>
+                        <div id="note-view-attachments" class="note-view-attachments" style="display:none">
+                            <div class="note-view-attachments-header">📂 附件列表</div>
+                            <div id="note-view-attachments-list" class="note-view-attachments-list"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('note-view-modal')">关闭</button>

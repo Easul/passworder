@@ -1084,3 +1084,154 @@ body {
   color: var(--text-secondary);
   font-size: 0.75rem;
 }
+
+/* Note View Modal Styles */
+.note-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.note-view-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.note-view-content {
+  padding: 24px;
+  min-height: 200px;
+}
+
+.note-view-content pre {
+  background: var(--bg);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+}
+
+.note-view-content h1,
+.note-view-content h2,
+.note-view-content h3,
+.note-view-content h4,
+.note-view-content h5,
+.note-view-content h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.note-view-content h1 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.note-view-content h2 { font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.note-view-content h3 { font-size: 1.125rem; }
+.note-view-content h4 { font-size: 1rem; }
+
+.note-view-content p {
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.note-view-content ul,
+.note-view-content ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.note-view-content li {
+  margin-bottom: 4px;
+}
+
+.note-view-content code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.note-view-content pre code {
+  padding: 0;
+  background: none;
+}
+
+.note-view-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 16px;
+  margin-left: 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.note-view-attachments {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.note-view-attachments-header {
+  padding: 12px 24px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.note-view-attachments-list {
+  padding: 12px 24px;
+}
+
+.note-view-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--surface);
+  transition: all 0.15s;
+}
+
+.note-view-attachment-item:hover {
+  border-color: var(--primary);
+  background: rgb(79 70 229 / 0.05);
+}
+
+.note-view-attachment-icon {
+  font-size: 1.5rem;
+}
+
+.note-view-attachment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.note-view-attachment-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-view-attachment-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.note-view-attachment-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
