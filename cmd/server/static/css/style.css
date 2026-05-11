@@ -195,6 +195,11 @@ body {
   transition: border-color 0.15s;
 }
 
+.form-input[type="date"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
