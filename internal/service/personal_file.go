@@ -213,8 +213,7 @@ func (s *PersonalFileService) EmptyTrash() error {
 		}
 	}
 
-	// Files deleted from disk; DB records remain with is_deleted=1
-	return nil
+	return s.repo.EmptyTrash()
 }
 
 func (s *PersonalFileService) Open(id int64) (*model.PersonalFile, io.ReadCloser, error) {
