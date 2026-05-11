@@ -139,9 +139,10 @@ window.PassworderNoteEditorMethods = {
     try {
       await this.api('/notes/trash', { method: 'DELETE' });
       this.showToast('success', '回收站已清空');
-      await this.loadNotes();
       this.trashNotes = [];
       this.renderTrash();
+      this.closeModal('trash-modal');
+      await this.loadNotes();
     } catch (e) {
       this.showToast('error', e.message || '清空失败');
     }

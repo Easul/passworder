@@ -326,8 +326,9 @@ window.PassworderPreviewMethods = {
     document.getElementById('note-view-title').textContent = note.title || '笔记内容';
     const remarksEl = document.getElementById('note-view-remarks');
     if (remarksEl) {
-      remarksEl.textContent = note.remarks || '';
-      remarksEl.style.display = note.remarks ? 'inline' : 'none';
+      const textSpan = remarksEl.querySelector('span:last-child');
+      if (textSpan) textSpan.textContent = note.remarks || '';
+      remarksEl.style.display = note.remarks ? 'flex' : 'none';
     }
     const contentDiv = document.getElementById('note-view-content');
     if (note.bodyFormat === 'markdown') {
