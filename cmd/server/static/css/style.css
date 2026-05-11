@@ -712,6 +712,12 @@ body {
 }
 
 /* Image Preview Modal */
+#image-preview-modal,
+#document-preview-modal,
+#archive-preview-modal {
+  z-index: 1000;
+}
+
 #image-preview-modal .modal {
   max-width: 90vw;
 }

@@ -35,10 +35,12 @@ window.PassworderNoteEditorMethods = {
     }
     this.vditor = new window.Vditor('note-body-vditor', {
       mode: 'ir', height: 320, value: initialValue || '', cache: { enable: false }, counter: { enable: false },
-      toolbarConfig: { pin: true, hide: !this.vditorToolbarVisible },
+      toolbarConfig: { pin: false, hide: true },
       toolbar: ['headings','bold','italic','strike','|','list','ordered-list','check','|','quote','link','table','|','code','inline-code','|','undo','redo','|','fullscreen'],
       preview: { delay: 0, markdown: { toc: false } }
     });
+    this.vditorToolbarVisible = false;
+    this.applyToolbarVisibility();
   },
 
   toggleVditorToolbar() {

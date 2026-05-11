@@ -86,7 +86,15 @@ window.PassworderPreviewMethods = {
 
   async previewNoteAttachment(attachmentId, fileType) {
     try {
-      const att = this.getNoteAttachment(attachmentId);
+      let att = this.getNoteAttachment(attachmentId);
+      if (!att) {
+        try {
+          const attachments = await this.api(`/files/${this.currentPreviewNote?.id || this.currentNoteId}/attachments`);
+          att = attachments?.find(a => a.id === attachmentId);
+        } catch (e) {
+          console.error('Failed to fetch attachment info:', e);
+        }
+      }
       if (!att) return this.showToast('error', '附件信息不存在，请刷新页面');
       if (fileType === 'image') {
         const res = await fetch(`/api/note-attachments/${attachmentId}/preview`, { headers: this.token ? { 'Authorization': this.token } : {} });
@@ -316,6 +324,11 @@ window.PassworderPreviewMethods = {
     if (!note) return;
     this.currentPreviewNote = note;
     document.getElementById('note-view-title').textContent = note.title || '笔记内容';
+    const remarksEl = document.getElementById('note-view-remarks');
+    if (remarksEl) {
+      remarksEl.textContent = note.remarks || '';
+      remarksEl.style.display = note.remarks ? 'inline' : 'none';
+    }
     const contentDiv = document.getElementById('note-view-content');
     if (note.bodyFormat === 'markdown') {
       await this.loadMarkdownLibs();
