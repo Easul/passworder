@@ -32,16 +32,16 @@ cd passworder
 # 编译
 go build -o dist/passworder ./cmd/server
 
-# 运行（默认端口 8080）
+# 运行（默认端口 18080）
 ./dist/passworder
 
 # 指定参数运行
-./dist/passworder --host 0.0.0.0 --port 8080 --db ./password.db --storage ./storage
+./dist/passworder --host 0.0.0.0 --port 18080 --db ./password.db --storage ./storage
 ```
 
 ### 首次使用
 
-1. 打开浏览器访问 `http://localhost:8080`
+1. 打开浏览器访问 `http://localhost:18080`
 2. 设置主密码（至少 8 位）完成初始化
 3. 开始添加账号或笔记
 
@@ -81,18 +81,20 @@ go build -o dist/passworder ./cmd/server
 
 | 参数 | 环境变量 | 默认值 | 说明 |
 |------|----------|--------|-------|
-| `--host` | `PASSORDER_HOST` | `0.0.0.0` | HTTP 服务地址 |
-| `--port` | `PASSORDER_PORT` | `8080` | HTTP 服务端口 |
-| `--db` | - | `./password.db` | SQLite 数据库路径 |
-| `--storage` | - | `./storage` | 文件存储目录 |
+| `--host` | `PASSORDER_HOST` | `127.0.0.1` | HTTP 服务地址 |
+| `--port` | `PASSORDER_PORT` | `18080` | HTTP 服务端口 |
+| `--db` | - | `程序目录/password.db` | SQLite 数据库路径 |
+| `--storage` | - | `程序目录/storage` | 文件存储目录 |
+
+（注意：数据库和存储目录默认存放在程序所在目录，而非运行目录。使用 `--db` 和 `--storage` 可指定其他位置）
 
 示例：
 ```bash
 # 使用环境变量
-PASSORDER_HOST=127.0.0.1 PASSORDER_PORT=9000 ./dist/passworder
+PASSORDER_HOST=0.0.0.0 PASSORDER_PORT=9000 ./dist/passworder
 
 # 使用命令行参数
-./dist/passworder --host 0.0.0.0 --port 8080 --db ./password.db --storage ./storage
+./dist/passworder --host 0.0.0.0 --port 9000 --db /data/password.db --storage /data/storage
 ```
 
 ## 数据备份

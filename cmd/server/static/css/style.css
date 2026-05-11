@@ -377,6 +377,13 @@ body {
   transition: transform 0.2s;
 }
 
+#account-modal .modal,
+#view-modal .modal,
+#note-modal .modal,
+#note-view-modal .modal {
+  max-width: 800px;
+}
+
 .modal-overlay.active .modal {
   transform: scale(1);
 }
