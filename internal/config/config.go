@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 const (
-	DefaultHost                  = "0.0.0.0"
-	DefaultPort                  = 8080
-	DefaultDBPath                = "./password.db"
-	DefaultStorageDir            = "./storage"
+	DefaultHost                  = "127.0.0.1"
+	DefaultPort                  = 18080
+	DefaultDBName                = "password.db"
+	DefaultStorageName           = "storage"
 	DefaultReminderCheckInterval = 10
 )
 
@@ -30,12 +32,52 @@ type CLIOverrides struct {
 	ReminderCheckInterval int
 }
 
+func getExecutableDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "."
+	}
+	exe, err = filepath.EvalSymlinks(exe)
+	if err != nil {
+		return "."
+	}
+	return filepath.Dir(exe)
+}
+
+func isRunningFromGoRun() bool {
+	exe, err := os.Executable()
+	if err != nil {
+		return false
+	}
+	exe = strings.ToLower(exe)
+	return strings.HasPrefix(filepath.Base(exe), "__debug_bin") ||
+		strings.HasPrefix(filepath.Base(exe), "go-build")
+}
+
+func GetDataDir() string {
+	if isRunningFromGoRun() {
+		_, filename, _, ok := runtime.Caller(0)
+		if ok {
+			projectRoot := filepath.Dir(filepath.Dir(filepath.Dir(filename)))
+			return projectRoot
+		}
+	}
+	return getExecutableDir()
+}
+
+func resolveDataPath(userPath, defaultName string) string {
+	if userPath != "" {
+		return userPath
+	}
+	return filepath.Join(GetDataDir(), defaultName)
+}
+
 func Load(overrides CLIOverrides) (*Config, error) {
 	cfg := &Config{
 		Host:                  DefaultHost,
 		Port:                  DefaultPort,
-		DBPath:                DefaultDBPath,
-		StorageDir:            DefaultStorageDir,
+		DBPath:                resolveDataPath(overrides.DBPath, DefaultDBName),
+		StorageDir:            resolveDataPath(overrides.StorageDir, DefaultStorageName),
 		ReminderCheckInterval: DefaultReminderCheckInterval,
 	}
 
@@ -58,12 +100,6 @@ func Load(overrides CLIOverrides) (*Config, error) {
 	}
 	if overrides.Port > 0 {
 		cfg.Port = overrides.Port
-	}
-	if overrides.DBPath != "" {
-		cfg.DBPath = overrides.DBPath
-	}
-	if overrides.StorageDir != "" {
-		cfg.StorageDir = overrides.StorageDir
 	}
 
 	if err := os.MkdirAll(cfg.StorageDir, 0755); err != nil {
@@ -89,8 +125,8 @@ func LoadFromEnvAndDefaults(overrides CLIOverrides) *Config {
 	cfg := &Config{
 		Host:                  DefaultHost,
 		Port:                  DefaultPort,
-		DBPath:                DefaultDBPath,
-		StorageDir:            DefaultStorageDir,
+		DBPath:                resolveDataPath(overrides.DBPath, DefaultDBName),
+		StorageDir:            resolveDataPath(overrides.StorageDir, DefaultStorageName),
 		ReminderCheckInterval: DefaultReminderCheckInterval,
 	}
 
@@ -113,12 +149,6 @@ func LoadFromEnvAndDefaults(overrides CLIOverrides) *Config {
 	}
 	if overrides.Port > 0 {
 		cfg.Port = overrides.Port
-	}
-	if overrides.DBPath != "" {
-		cfg.DBPath = overrides.DBPath
-	}
-	if overrides.StorageDir != "" {
-		cfg.StorageDir = overrides.StorageDir
 	}
 
 	return cfg

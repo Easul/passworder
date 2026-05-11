@@ -2,7 +2,7 @@
 
 **Generated:** 2026-05-11
 **Commit:** Latest
-**Branch:** refactor/v2
+**Branch:** refactor/data-path-and-ui
 
 ## OVERVIEW
 Go backend + embedded static UI for password/account management and note taking. SQLite storage, Gorilla mux HTTP API, vanilla JS frontend served via embed.FS.

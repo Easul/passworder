@@ -3,6 +3,7 @@ window.PassworderAuthMethods = {
     try {
       const res = await fetch('/api/auth/check').then(r => r.json());
       const status = res.data || res;
+      this.hideLoadingMask();
       if (status.initialized) {
         if (this.token) {
           this.showMain();
@@ -15,6 +16,18 @@ window.PassworderAuthMethods = {
       }
     } catch (e) {
       this.showToast('error', '连接失败');
+    }
+  },
+
+  hideLoadingMask() {
+    const mask = document.getElementById('loading-mask');
+    const app = document.getElementById('app');
+    if (mask) {
+      mask.style.opacity = '0';
+      setTimeout(() => { mask.style.display = 'none'; }, 300);
+    }
+    if (app) {
+      app.style.visibility = 'visible';
     }
   },
 

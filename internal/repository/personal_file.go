@@ -11,6 +11,9 @@ const (
 	personalFileCreateSQL = `INSERT INTO personal_files 
 		(title, remarks, body, body_format, original_name, stored_name, mime_type, size_bytes, sha256, file_type, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	personalFileCreateImportedSQL = `INSERT INTO personal_files 
+		(id, title, remarks, body, body_format, original_name, stored_name, mime_type, size_bytes, sha256, file_type, created_at, updated_at) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	personalFileUpdateTitleSQL              = `UPDATE personal_files SET title = ?, updated_at = ? WHERE id = ?`
 	personalFileUpdateBodySQL               = `UPDATE personal_files SET body = ?, body_format = ?, updated_at = ? WHERE id = ?`
 	personalFileUpdateSQL                   = `UPDATE personal_files SET title = ?, remarks = ?, body = ?, body_format = ?, updated_at = ? WHERE id = ?`
@@ -23,6 +26,8 @@ const (
 	personalFileListByTypeSQL               = `SELECT pf.id, pf.title, pf.remarks, pf.body, pf.body_format, pf.original_name, pf.stored_name, pf.mime_type, pf.size_bytes, pf.sha256, pf.file_type, pf.created_at, pf.updated_at, pf.deleted_at, pf.is_deleted, COALESCE((SELECT COUNT(1) FROM note_attachments na WHERE na.personal_file_id = pf.id AND na.is_deleted = 0), 0) AS attachment_count FROM personal_files pf WHERE pf.file_type = ? AND pf.is_deleted = 0 ORDER BY pf.created_at DESC`
 	personalFileDeleteAttachmentsByTrashSQL = `DELETE FROM note_attachments WHERE personal_file_id IN (SELECT id FROM personal_files WHERE is_deleted = 1)`
 	personalFileEmptyTrashSQL               = `DELETE FROM personal_files WHERE is_deleted = 1`
+	personalFileHardDeleteSQL               = `DELETE FROM personal_files WHERE id = ?`
+	personalFileDeleteAttachmentsByIDSQL    = `DELETE FROM note_attachments WHERE personal_file_id = ?`
 )
 
 type PersonalFileRepository struct {
@@ -40,6 +45,11 @@ func (r *PersonalFileRepository) Create(f *model.PersonalFile) error {
 	}
 	f.ID, _ = result.LastInsertId()
 	return nil
+}
+
+func (r *PersonalFileRepository) CreateImported(f *model.PersonalFile) error {
+	_, err := r.db.Exec(personalFileCreateImportedSQL, f.ID, f.Title, f.Remarks, f.Body, f.BodyFormat, f.OriginalName, f.StoredName, f.MimeType, f.SizeBytes, f.Sha256, f.FileType, f.CreatedAt, f.UpdatedAt)
+	return err
 }
 
 func (r *PersonalFileRepository) UpdateTitle(id int64, title string) error {
@@ -112,6 +122,25 @@ func (r *PersonalFileRepository) EmptyTrash() error {
 	}
 
 	if _, err := tx.Exec(personalFileEmptyTrashSQL); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *PersonalFileRepository) HardDelete(id int64) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(personalFileDeleteAttachmentsByIDSQL, id); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec(personalFileHardDeleteSQL, id); err != nil {
 		_ = tx.Rollback()
 		return err
 	}

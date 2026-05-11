@@ -13,9 +13,16 @@ const (
 	accountCreateSQL = `INSERT INTO accounts
 		(category_id, title, website, username, password_encrypted, email, reminder_email, remind_at, registration_time, registration_notes, phone, notes, tags, is_favorite, status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	accountCreateImportedSQL = `INSERT INTO accounts
+		(id, category_id, title, website, username, password_encrypted, email, reminder_email, remind_at, registration_time, registration_notes, phone, notes, tags, is_favorite, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	accountUpdateSQL = `UPDATE accounts SET
 		category_id = ?, title = ?, website = ?, username = ?, password_encrypted = ?,
 		email = ?, reminder_email = ?, remind_at = ?, registration_time = ?, registration_notes = ?, phone = ?, notes = ?, tags = ?, is_favorite = ?, status = ?, updated_at = ?
+		WHERE id = ?`
+	accountUpdateImportedSQL = `UPDATE accounts SET
+		category_id = ?, title = ?, website = ?, username = ?, password_encrypted = ?,
+		email = ?, reminder_email = ?, remind_at = ?, registration_time = ?, registration_notes = ?, phone = ?, notes = ?, tags = ?, is_favorite = ?, status = ?, created_at = ?, updated_at = ?, is_deleted = 0
 		WHERE id = ?`
 	accountDeleteSQL = `UPDATE accounts SET is_deleted = 1, updated_at = ? WHERE id = ?`
 	accountGetSQL    = `SELECT
@@ -111,11 +118,39 @@ func (r *AccountRepository) Create(a *model.Account) error {
 	return nil
 }
 
+func (r *AccountRepository) CreateImported(a *model.Account) error {
+	if a.CreatedAt == 0 {
+		a.CreatedAt = model.Now()
+	}
+	if a.UpdatedAt == 0 {
+		a.UpdatedAt = a.CreatedAt
+	}
+	_, err := r.db.Exec(accountCreateImportedSQL,
+		a.ID, a.CategoryID, a.Title, a.Website, a.Username, a.PasswordEncrypted,
+		a.Email, a.ReminderEmail, a.RemindAt, a.RegistrationTime, a.RegistrationNotes, a.Phone, a.Notes, a.Tags, a.IsFavorite, a.Status, a.CreatedAt, a.UpdatedAt,
+	)
+	return err
+}
+
 func (r *AccountRepository) Update(a *model.Account) error {
 	a.UpdatedAt = model.Now()
 	_, err := r.db.Exec(accountUpdateSQL,
 		a.CategoryID, a.Title, a.Website, a.Username, a.PasswordEncrypted,
 		a.Email, a.ReminderEmail, a.RemindAt, a.RegistrationTime, a.RegistrationNotes, a.Phone, a.Notes, a.Tags, a.IsFavorite, a.Status, a.UpdatedAt, a.ID,
+	)
+	return err
+}
+
+func (r *AccountRepository) UpdateImported(a *model.Account) error {
+	if a.CreatedAt == 0 {
+		a.CreatedAt = model.Now()
+	}
+	if a.UpdatedAt == 0 {
+		a.UpdatedAt = a.CreatedAt
+	}
+	_, err := r.db.Exec(accountUpdateImportedSQL,
+		a.CategoryID, a.Title, a.Website, a.Username, a.PasswordEncrypted,
+		a.Email, a.ReminderEmail, a.RemindAt, a.RegistrationTime, a.RegistrationNotes, a.Phone, a.Notes, a.Tags, a.IsFavorite, a.Status, a.CreatedAt, a.UpdatedAt, a.ID,
 	)
 	return err
 }

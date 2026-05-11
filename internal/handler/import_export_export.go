@@ -108,7 +108,7 @@ func (h *ImportExportHandler) buildExportData() (ExportData, []ExportNote, error
 
 func (h *ImportExportHandler) writeExportZip(w http.ResponseWriter, data ExportData, notes []ExportNote) error {
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"passworder-export-%s.zip\"", time.Now().Format("2006-01-02")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"passworder-export-%s.zip\"", time.Now().Format("2006-01-02-15-04-05")))
 
 	zw := zip.NewWriter(w)
 	defer zw.Close()

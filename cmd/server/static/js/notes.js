@@ -10,6 +10,8 @@ window.PassworderNotesMethods = {
 
   async loadTrash() {
     try {
+      this.trashNotes = [];
+      this.renderTrash();
       this.trashNotes = await this.api('/notes/trash') || [];
       this.renderTrash();
       this.openModal('trash-modal');

@@ -79,7 +79,7 @@ func (s *PersonalFileService) Create(title, remarks, body, bodyFormat string, he
 	return f, nil
 }
 
-func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat string, header *multipart.FileHeader, src multipart.File, createdAt, updatedAt int64) (*model.PersonalFile, error) {
+func (s *PersonalFileService) CreateImported(id int64, title, remarks, body, bodyFormat string, header *multipart.FileHeader, src multipart.File, createdAt, updatedAt int64) (*model.PersonalFile, error) {
 	bodyFormat, err := normalizeBodyFormat(bodyFormat)
 	if err != nil {
 		return nil, err
@@ -115,6 +115,7 @@ func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat st
 	}
 
 	f := &model.PersonalFile{
+		ID:           id,
 		Title:        title,
 		Remarks:      remarks,
 		Body:         body,
@@ -129,7 +130,7 @@ func (s *PersonalFileService) CreateImported(title, remarks, body, bodyFormat st
 		UpdatedAt:    updatedAt,
 	}
 
-	if err := s.repo.Create(f); err != nil {
+	if err := s.repo.CreateImported(f); err != nil {
 		if storedName != "" {
 			s.store.DeletePersonalFile(storedName)
 		}
@@ -160,6 +161,31 @@ func (s *PersonalFileService) DeleteNote(id int64) error {
 		return err
 	}
 	return nil
+}
+
+func (s *PersonalFileService) HardDeleteNote(id int64) error {
+	f, err := s.repo.Get(id)
+	if err != nil {
+		return err
+	}
+	if f == nil {
+		return fmt.Errorf("file not found")
+	}
+
+	attachments, err := s.noteAttachment.ListByFile(id)
+	if err != nil {
+		return err
+	}
+	for _, att := range attachments {
+		if att.StoredName != "" {
+			s.store.DeletePersonalFile(att.StoredName)
+		}
+	}
+	if f.StoredName != "" {
+		s.store.DeletePersonalFile(f.StoredName)
+	}
+
+	return s.repo.HardDelete(id)
 }
 
 func (s *PersonalFileService) Delete(id int64) error {
@@ -213,8 +239,7 @@ func (s *PersonalFileService) EmptyTrash() error {
 		}
 	}
 
-	// Files deleted from disk; DB records remain with is_deleted=1
-	return nil
+	return s.repo.EmptyTrash()
 }
 
 func (s *PersonalFileService) Open(id int64) (*model.PersonalFile, io.ReadCloser, error) {

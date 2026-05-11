@@ -16,7 +16,7 @@ go mod download
 go run ./cmd/server
 
 # 或带参数
-go run ./cmd/server --port 8080 --db ./dev.db --storage ./dev-storage
+go run ./cmd/server --port 18080 --db ./dev.db --storage ./dev-storage
 
 # 构建
 go build -o dist/passworder ./cmd/server
@@ -48,13 +48,13 @@ test/
 mkdir -p test/$(date +%Y%m%d)
 
 # 使用测试数据库和存储路径运行
-./dist/passworder -db test/$(date +%Y%m%d)/test.db -storage test/$(date +%Y%m%d)/storage
+./dist/passworder --db test/$(date +%Y%m%d)/test.db --storage test/$(date +%Y%m%d)/storage
 
-# 或使用长参数形式
-./dist/passworder --db test/20260202/test.db --storage test/20260202/storage
+# 或使用完整参数形式
+./dist/passworder --host 127.0.0.1 --port 18080 --db test/20260202/test.db --storage test/20260202/storage
 
 # 针对特定测试场景
-./dist/passworder -db test/qa-$(date +%Y%m%d).db -storage test/qa-storage-$(date +%Y%m%d)
+./dist/passworder --db test/qa-$(date +%Y%m%d).db --storage test/qa-storage-$(date +%Y%m%d)
 ```
 
 ### 禁止行为

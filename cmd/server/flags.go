@@ -20,8 +20,8 @@ type serverFlags struct {
 func parseServerFlags() serverFlags {
 	var f serverFlags
 
-	flag.StringVar(&f.host, "host", "", "HTTP server host (default: 0.0.0.0, env: PASSORDER_HOST)")
-	flag.IntVar(&f.port, "port", 0, "HTTP server port (default: 8080, env: PASSORDER_PORT)")
+	flag.StringVar(&f.host, "host", "", "HTTP server host (default: 127.0.0.1, env: PASSORDER_HOST)")
+	flag.IntVar(&f.port, "port", 0, "HTTP server port (default: 18080, env: PASSORDER_PORT)")
 	flag.StringVar(&f.dbPath, "db", "", "SQLite database path")
 	flag.StringVar(&f.storageDir, "storage", "", "Storage directory path")
 	flag.IntVar(&f.reminderInterval, "reminder-interval", 0, "Reminder check interval in minutes (default: 10)")
@@ -33,8 +33,8 @@ func parseServerFlags() serverFlags {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fmt.Fprintf(os.Stderr, "  -v                         Show version and exit\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help                 Show this help message\n")
-		fmt.Fprintf(os.Stderr, "      --host <address>       HTTP server host (default: 0.0.0.0, env: PASSORDER_HOST)\n")
-		fmt.Fprintf(os.Stderr, "      --port <number>        HTTP server port (default: 8080, env: PASSORDER_PORT)\n")
+		fmt.Fprintf(os.Stderr, "      --host <address>       HTTP server host (default: 127.0.0.1, env: PASSORDER_HOST)\n")
+		fmt.Fprintf(os.Stderr, "      --port <number>        HTTP server port (default: 18080, env: PASSORDER_PORT)\n")
 		fmt.Fprintf(os.Stderr, "      --db <path>            SQLite database path\n")
 		fmt.Fprintf(os.Stderr, "      --storage <path>       Storage directory path\n")
 		fmt.Fprintf(os.Stderr, "      --reminder-interval <minutes>  Reminder check interval (default: 10)\n")

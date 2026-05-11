@@ -108,11 +108,17 @@ window.PassworderSettingsMethods = {
       const res = await fetch('/api/export', {
         headers: this.token ? { 'Authorization': this.token } : {}
       });
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = utf8Match
+        ? decodeURIComponent(utf8Match[1])
+        : (plainMatch ? plainMatch[1] : `passworder-export-${new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)}.zip`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `passworder-export-${new Date().toISOString().slice(0,10)}.zip`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
       if (loadingToast) loadingToast.remove();

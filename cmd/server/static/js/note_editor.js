@@ -35,10 +35,12 @@ window.PassworderNoteEditorMethods = {
     }
     this.vditor = new window.Vditor('note-body-vditor', {
       mode: 'ir', height: 320, value: initialValue || '', cache: { enable: false }, counter: { enable: false },
-      toolbarConfig: { pin: true, hide: !this.vditorToolbarVisible },
+      toolbarConfig: { pin: false, hide: true },
       toolbar: ['headings','bold','italic','strike','|','list','ordered-list','check','|','quote','link','table','|','code','inline-code','|','undo','redo','|','fullscreen'],
       preview: { delay: 0, markdown: { toc: false } }
     });
+    this.vditorToolbarVisible = false;
+    this.applyToolbarVisibility();
   },
 
   toggleVditorToolbar() {
@@ -137,9 +139,10 @@ window.PassworderNoteEditorMethods = {
     try {
       await this.api('/notes/trash', { method: 'DELETE' });
       this.showToast('success', '回收站已清空');
-      await this.loadNotes();
       this.trashNotes = [];
       this.renderTrash();
+      this.closeModal('trash-modal');
+      await this.loadNotes();
     } catch (e) {
       this.showToast('error', e.message || '清空失败');
     }
