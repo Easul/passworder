@@ -2,7 +2,7 @@
 
 ## 环境要求
 
-- Go 1.20+
+- Go 1.25+
 - SQLite3 开发库（Linux/macOS 需要 CGO，Windows 使用纯 Go 驱动）
 - Node.js（可选，用于前端语法检查）
 
