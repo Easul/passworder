@@ -84,18 +84,18 @@ window.PassworderPreviewMethods = {
     return null;
   },
 
-  async previewNoteAttachment(attachmentId, fileType) {
+  async previewNoteAttachment(attachmentId, fileType, noteId) {
     try {
       let att = this.getNoteAttachment(attachmentId);
       if (!att) {
-        const noteId = this.currentPreviewNote?.id || this.currentNoteId;
-        if (!noteId) return this.showToast('error', '无法获取附件信息');
+        const targetNoteId = noteId || this.currentPreviewNote?.id || this.currentNoteId;
+        if (!targetNoteId) return this.showToast('error', '无法获取附件信息');
         try {
-          const attachments = await this.api(`/files/${noteId}/attachments`);
+          const attachments = await this.api(`/files/${targetNoteId}/attachments`);
           if (attachments) {
             att = attachments.find(a => a.id === attachmentId);
-            if (att && noteId) {
-              this.noteAttachments[noteId] = attachments;
+            if (att) {
+              this.noteAttachments[targetNoteId] = attachments;
             }
           }
         } catch (e) {
@@ -382,7 +382,7 @@ window.PassworderPreviewMethods = {
               <div class="note-view-attachment-meta">${size} · ${this.formatDate(att.createdAt)}</div>
             </div>
             <div class="note-view-attachment-actions">
-              <button class="btn btn-sm btn-icon" onclick="Passworder.previewNoteAttachment(${att.id}, '${this.escapeAttr(att.fileType)}')" title="预览">👁️</button>
+              <button class="btn btn-sm btn-icon" onclick="Passworder.previewNoteAttachment(${att.id}, '${this.escapeAttr(att.fileType)}', ${noteId})" title="预览">👁️</button>
               <button class="btn btn-sm btn-icon" onclick="Passworder.downloadNoteAttachment(${att.id}, '${this.escapeAttr(att.originalName)}')" title="下载">⬇️</button>
             </div>
           </div>
