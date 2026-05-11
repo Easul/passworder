@@ -143,8 +143,18 @@ func (h *ImportExportHandler) buildPrimaryFile(note ExportNote, zr *zip.Reader) 
 func (h *ImportExportHandler) importNotes(manifest ExportData, zr *zip.Reader) int {
 	notesImported := 0
 	for _, note := range manifest.Notes {
+		var newNote *model.PersonalFile
+		var err error
+
+		existingNote, _ := h.personalFileService.Get(note.ID)
+		if existingNote != nil {
+			if err := h.personalFileService.DeleteNote(note.ID); err != nil {
+				continue
+			}
+		}
+
 		primaryHeader, primaryFile := h.buildPrimaryFile(note, zr)
-		newNote, err := h.personalFileService.CreateImported(note.Title, note.Remarks, note.Body, note.BodyFormat, primaryHeader, primaryFile, note.CreatedAt, note.UpdatedAt)
+		newNote, err = h.personalFileService.CreateImported(note.Title, note.Remarks, note.Body, note.BodyFormat, primaryHeader, primaryFile, note.CreatedAt, note.UpdatedAt)
 		if err != nil {
 			continue
 		}
