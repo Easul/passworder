@@ -162,6 +162,31 @@ func (s *PersonalFileService) DeleteNote(id int64) error {
 	return nil
 }
 
+func (s *PersonalFileService) HardDeleteNote(id int64) error {
+	f, err := s.repo.Get(id)
+	if err != nil {
+		return err
+	}
+	if f == nil {
+		return fmt.Errorf("file not found")
+	}
+
+	attachments, err := s.noteAttachment.ListByFile(id)
+	if err != nil {
+		return err
+	}
+	for _, att := range attachments {
+		if att.StoredName != "" {
+			s.store.DeletePersonalFile(att.StoredName)
+		}
+	}
+	if f.StoredName != "" {
+		s.store.DeletePersonalFile(f.StoredName)
+	}
+
+	return s.repo.HardDelete(id)
+}
+
 func (s *PersonalFileService) Delete(id int64) error {
 	return s.DeleteNote(id)
 }

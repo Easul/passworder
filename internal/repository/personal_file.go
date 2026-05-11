@@ -23,6 +23,8 @@ const (
 	personalFileListByTypeSQL               = `SELECT pf.id, pf.title, pf.remarks, pf.body, pf.body_format, pf.original_name, pf.stored_name, pf.mime_type, pf.size_bytes, pf.sha256, pf.file_type, pf.created_at, pf.updated_at, pf.deleted_at, pf.is_deleted, COALESCE((SELECT COUNT(1) FROM note_attachments na WHERE na.personal_file_id = pf.id AND na.is_deleted = 0), 0) AS attachment_count FROM personal_files pf WHERE pf.file_type = ? AND pf.is_deleted = 0 ORDER BY pf.created_at DESC`
 	personalFileDeleteAttachmentsByTrashSQL = `DELETE FROM note_attachments WHERE personal_file_id IN (SELECT id FROM personal_files WHERE is_deleted = 1)`
 	personalFileEmptyTrashSQL               = `DELETE FROM personal_files WHERE is_deleted = 1`
+	personalFileHardDeleteSQL               = `DELETE FROM personal_files WHERE id = ?`
+	personalFileDeleteAttachmentsByIDSQL    = `DELETE FROM note_attachments WHERE personal_file_id = ?`
 )
 
 type PersonalFileRepository struct {
@@ -112,6 +114,25 @@ func (r *PersonalFileRepository) EmptyTrash() error {
 	}
 
 	if _, err := tx.Exec(personalFileEmptyTrashSQL); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *PersonalFileRepository) HardDelete(id int64) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(personalFileDeleteAttachmentsByIDSQL, id); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec(personalFileHardDeleteSQL, id); err != nil {
 		_ = tx.Rollback()
 		return err
 	}

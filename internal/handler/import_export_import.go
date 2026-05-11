@@ -148,7 +148,7 @@ func (h *ImportExportHandler) importNotes(manifest ExportData, zr *zip.Reader) i
 
 		existingNote, _ := h.personalFileService.Get(note.ID)
 		if existingNote != nil {
-			if err := h.personalFileService.DeleteNote(note.ID); err != nil {
+			if err := h.personalFileService.HardDeleteNote(note.ID); err != nil {
 				continue
 			}
 		}
