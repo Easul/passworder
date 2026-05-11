@@ -177,10 +177,13 @@ go test ./...
 go run ./cmd/server
 
 # 构建发布版本
-# Linux/macOS
-go build -trimpath -ldflags="-s -w" -o dist/passworder ./cmd/server
+# Linux
+CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-linux-amd64 ./cmd/server
 
-# Windows
+# macOS
+CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-darwin-amd64 ./cmd/server
+
+# Windows（无 CGO 依赖）
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/passworder-windows-amd64.exe ./cmd/server
 ```
 

@@ -116,15 +116,23 @@ mkdir -p test/$(date +%Y%m%d)
 
 ## 构建发布
 
+### 常用平台构建命令
+
 ```bash
-# Linux/macOS
-go build -trimpath -ldflags="-s -w" -o dist/passworder ./cmd/server
+# Linux
+CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-linux-amd64 ./cmd/server
+
+# macOS
+CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-darwin-amd64 ./cmd/server
 
 # Windows（无 CGO 依赖）
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/passworder-windows-amd64.exe ./cmd/server
 ```
 
-**说明**：`-ldflags="-s -w"` 用于移除调试信息和符号表，减小二进制体积。
+**说明**：
+- `-ldflags="-s -w"` 用于移除调试信息和符号表，减小二进制体积
+- Linux 和 macOS 需要 CGO 支持 SQLite3
+- Windows 使用纯 Go 的 SQLite 驱动，无需 CGO
 
 ## 版本规范
 
