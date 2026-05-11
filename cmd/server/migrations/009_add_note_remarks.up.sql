@@ -1,0 +1,1 @@
+ALTER TABLE personal_files ADD COLUMN remarks TEXT NOT NULL DEFAULT '';

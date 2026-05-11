@@ -1,0 +1,35 @@
+# Database and storage
+password.db
+*.db
+storage/
+dist/
+
+# Build artifacts
+passworder
+*.exe
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Temp and debug files
+temp/
+.playwright-mcp/
+qa-*.md
+
+# Go test cache
+*.test
+*.out
+test/
+
+# opencode
+.sisyphus

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Passworder - 密码管理器</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="setup-page" class="page auth-page">
+            <div class="auth-box card">
+                <div class="auth-logo">🔐</div>
+                <h1 class="auth-title">初始化</h1>
+                <p class="auth-subtitle">设置主密码以开始使用</p>
+                <div class="form-group">
+                    <input type="password" id="setup-password" class="form-input" placeholder="主密码（至少8位）" oninput="Passworder.checkPasswordStrength()" autocomplete="new-password">
+                    <div class="password-strength">
+                        <div id="strength-bar" class="password-strength-bar"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="setup-confirm" class="form-input" placeholder="确认密码" autocomplete="new-password">
+                </div>
+                <button type="button" class="btn btn-primary w-full" onclick="Passworder.setup()">开始使用</button>
+            </div>
+        </div>
+
+        <div id="login-page" class="page auth-page">
+            <div class="auth-box card">
+                <div class="auth-logo">🔐</div>
+                <h1 class="auth-title">登录</h1>
+                <p class="auth-subtitle">输入主密码以继续</p>
+                <div class="form-group">
+                    <input type="password" id="login-password" class="form-input" placeholder="主密码" autocomplete="current-password">
+                </div>
+                <button type="button" class="btn btn-primary w-full" onclick="Passworder.login()">登录</button>
+            </div>
+        </div>
+
+        <div id="main-page" class="page">
+            <header class="header" id="main-header"></header>
+            <div class="container">
+                <div class="search-bar">
+                    <input type="text" id="search-input" class="form-input search-input" placeholder="搜索账号、用户名、网站...">
+                    <select id="filter-category" class="form-select" style="width:auto;min-width:120px">
+                        <option value="">所有分类</option>
+                    </select>
+                    <select id="filter-reminder" class="form-select" style="width:auto;min-width:120px" onchange="Passworder.renderAccounts()">
+                        <option value="">提醒状态</option>
+                        <option value="pending">⏳ 待提醒</option>
+                        <option value="sent">✅ 已提醒</option>
+                        <option value="none">❌ 无提醒</option>
+                    </select>
+                    <select id="account-sort" class="form-select" style="width:auto;min-width:140px" onchange="Passworder.onAccountSortChange()">
+                        <option value="createdAt-desc">插入时间倒序</option>
+                        <option value="createdAt-asc">插入时间正序</option>
+                        <option value="registrationTime-desc">注册时间倒序</option>
+                        <option value="registrationTime-asc">注册时间正序</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.showCategories()">🏷️ <span>分类</span></button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.showNewAccount()">➕ <span>添加</span></button>
+                </div>
+                <div id="account-list" class="account-list"></div>
+                <div id="account-pagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <div id="notes-page" class="page">
+            <header class="header" id="notes-header"></header>
+            <div class="container">
+                <div class="search-bar" style="margin-bottom:16px">
+                    <input type="text" id="note-search-input" class="form-input search-input" placeholder="搜索笔记标题、内容...">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.loadTrash()">🗑️ 回收站</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.showNoteModal()">➕ 新建</button>
+                </div>
+                <div id="note-filter-tabs" class="file-filter-tabs">
+                    <button type="button" class="file-filter-tab active" data-filter="all">全部</button>
+                    <button type="button" class="file-filter-tab" data-filter="markdown">Markdown</button>
+                    <button type="button" class="file-filter-tab" data-filter="text">文本</button>
+                </div>
+                <div id="note-list" class="note-list"></div>
+                <div id="note-pagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <div id="account-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="account-modal-title">账号</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('account-modal')">×</button>
+                </div>
+                <div class="modal-body" id="account-form"></div>
+                <div class="modal-footer" id="account-modal-footer"></div>
+            </div>
+        </div>
+
+        <div id="view-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">账号详情</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('view-modal')">×</button>
+                </div>
+                <div class="modal-body" id="view-modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('view-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="generator-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">生成密码</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('generator-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <input type="text" id="generator-result" class="form-input password-input" readonly placeholder="生成的密码">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">长度: <span id="length-val">16</span></label>
+                        <input type="range" id="gen-length" min="8" max="64" value="16" oninput="document.getElementById('length-val').textContent=this.value">
+                    </div>
+                    <div class="generator-options">
+                        <label class="option-checkbox">
+                            <input type="checkbox" id="gen-upper" checked>
+                            <span>大写字母</span>
+                        </label>
+                        <label class="option-checkbox">
+                            <input type="checkbox" id="gen-lower" checked>
+                            <span>小写字母</span>
+                        </label>
+                        <label class="option-checkbox">
+                            <input type="checkbox" id="gen-numbers" checked>
+                            <span>数字</span>
+                        </label>
+                        <label class="option-checkbox">
+                            <input type="checkbox" id="gen-symbols" checked>
+                            <span>符号</span>
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-primary w-full" onclick="Passworder.generatePassword()">🎲 生成</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('generator-modal')">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.useGeneratedPassword()">使用此密码</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="category-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">分类管理</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('category-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="category-list"></div>
+                    <button type="button" class="btn btn-primary w-full mt-4" onclick="Passworder.showNewCategory()">➕ 新建分类</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('category-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">设置</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('settings-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">SMTP Host</label>
+                        <input type="text" class="form-input" id="setting-smtp-host" placeholder="smtp.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Port</label>
+                        <input type="number" class="form-input" id="setting-smtp-port" placeholder="587">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP 用户名</label>
+                        <input type="text" class="form-input" id="setting-smtp-username" placeholder="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP 密码</label>
+                        <input type="password" class="form-input" id="setting-smtp-password" placeholder="password" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">发信邮箱</label>
+                        <input type="email" class="form-input" id="setting-from-address" placeholder="noreply@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">发信人名称</label>
+                        <input type="text" class="form-input" id="setting-from-name" placeholder="Passworder">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提醒邮箱列表</label>
+                        <textarea class="form-textarea" id="setting-reminder-emails" placeholder="每行一个邮箱，例如：&#10;notify@example.com&#10;admin@example.com" style="min-height:80px"></textarea>
+                        <p class="form-hint" style="color:var(--text-secondary);font-size:0.8125rem;margin-top:4px">添加后可在账号编辑时选择</p>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary w-full" onclick="Passworder.saveSenderSettings()">💾 保存邮件设置</button>
+                    </div>
+                    <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
+                    <h4 style="margin-bottom:16px;color:var(--text-primary)">服务器配置</h4>
+                    <div class="form-group">
+                        <label class="form-label">Host</label>
+                        <input type="text" class="form-input" id="setting-server-host" placeholder="0.0.0.0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Port</label>
+                        <input type="number" class="form-input" id="setting-server-port" placeholder="8080">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">数据库路径</label>
+                        <input type="text" class="form-input" id="setting-server-db" placeholder="./password.db">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">存储目录</label>
+                        <input type="text" class="form-input" id="setting-server-storage" placeholder="./storage">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提醒间隔（分钟）</label>
+                        <input type="number" class="form-input" id="setting-server-reminder-interval" placeholder="10">
+                    </div>
+                    <p class="form-hint" style="color:var(--text-secondary);font-size:0.8125rem;margin-bottom:12px">注意：修改服务器配置需重新启动程序才能生效。命令行参数优先级最高。</p>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary w-full" onclick="Passworder.saveServerConfig()">💾 保存服务器配置</button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary w-full" onclick="Passworder.sendDueReminders()">📨 发送到期提醒</button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary w-full" onclick="Passworder.exportData()">📥 导出数据</button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary w-full" onclick="Passworder.importData()">📤 导入数据</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('settings-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="note-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="note-modal-title">新建笔记</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('note-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">标题 *</label>
+                        <input type="text" class="form-input" id="note-title" placeholder="笔记标题">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-textarea" id="note-remarks" placeholder="备注信息（可选）" style="min-height:100px"></textarea>
+                    </div>
+          <div class="form-group" id="note-body-container">
+            <label class="form-label" id="note-body-label">正文</label>
+            <button type="button" class="vditor-toolbar-toggle" id="vditor-toolbar-toggle" onclick="Passworder.toggleVditorToolbar()" title="切换工具栏">🛠️</button>
+            <textarea class="form-textarea" id="note-body" placeholder="在此输入内容..." style="min-height:200px"></textarea>
+            <div id="note-body-vditor" class="hidden"></div>
+          </div>
+                    <div class="form-group">
+                        <label class="form-label">格式</label>
+                        <div class="format-selector" id="note-format-selector">
+                            <label class="format-option">
+                                <input type="radio" name="note-format" value="text" checked>
+                                <span>📄 纯文本</span>
+                            </label>
+                            <label class="format-option">
+                                <input type="radio" name="note-format" value="markdown">
+                                <span>📝 Markdown</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="note-attachment-group">
+                        <label class="form-label">附件（可选）</label>
+                        <input type="file" class="form-input" id="note-file" multiple>
+                        <div id="note-attachment-list" class="attachment-list"></div>
+                        <p class="form-hint" id="note-attachment-info" style="display:none;color:var(--text-secondary);font-size:0.8125rem;margin-top:4px"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('note-modal')">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.saveNote()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="trash-modal" class="modal-overlay">
+            <div class="modal modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">回收站</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('trash-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="trash-list" class="note-list"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('trash-modal')">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.emptyTrash()">清空回收站</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="image-preview-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">图片预览</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('image-preview-modal')">×</button>
+                </div>
+                <div class="modal-body" style="text-align:center;max-height:80vh;overflow:auto">
+                    <img id="preview-image" style="max-width:90vw;max-height:70vh;object-fit:contain" alt="预览">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('image-preview-modal')">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.downloadPreviewImage()">⬇️ 下载</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="markdown-modal" class="modal-overlay">
+            <div class="modal modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">Markdown 编辑器</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('markdown-modal')">×</button>
+                </div>
+                <div class="modal-body markdown-editor-body">
+                    <div class="markdown-split-pane">
+                        <div class="markdown-editor-pane">
+                            <textarea id="markdown-editor" class="form-input markdown-textarea" placeholder="在此输入 Markdown 内容..."></textarea>
+                        </div>
+                        <div class="markdown-preview-pane">
+                            <div id="markdown-preview" class="markdown-preview"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('markdown-modal')">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.saveMarkdown()">💾 保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="note-view-modal" class="modal-overlay">
+            <div class="modal modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="note-view-title">笔记内容</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('note-view-modal')">×</button>
+                </div>
+                <div class="modal-body" style="max-height:70vh;overflow:auto">
+                    <div id="note-view-content"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('note-view-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="archive-preview-modal" class="modal-overlay">
+            <div class="modal modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="archive-preview-title">压缩包内容</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('archive-preview-modal')">×</button>
+                </div>
+                <div class="modal-body" style="max-height:70vh;overflow:auto">
+                    <div id="archive-preview-content"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('archive-preview-modal')">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.downloadPreviewImage()">⬇️ 下载</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="document-preview-modal" class="modal-overlay">
+            <div class="modal modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="document-preview-title">文档预览</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('document-preview-modal')">×</button>
+                </div>
+                <div class="modal-body" style="max-height:70vh;overflow:auto">
+                    <div id="document-preview-content"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('document-preview-modal')">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="Passworder.downloadPreviewImage()">⬇️ 下载</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pdf-preview-modal" class="modal-overlay">
+            <div class="modal" style="width:95vw;max-width:none;height:95vh;display:flex;flex-direction:column">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="pdf-preview-title">PDF 预览</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('pdf-preview-modal')">×</button>
+                </div>
+                <div class="modal-body" style="flex:1;overflow:hidden;padding:0">
+                    <iframe id="pdf-preview-frame" style="width:100%;height:100%;border:none" title="PDF预览"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('pdf-preview-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script src="/js/shared.js?v=1000"></script>
+    <script src="/js/app.js?v=1000"></script>
+    <script src="/js/ui.js?v=1000"></script>
+    <script src="/js/auth.js?v=1000"></script>
+    <script src="/js/accounts.js?v=1000"></script>
+    <script src="/js/settings.js?v=1000"></script>
+    <script src="/js/notes.js?v=1000"></script>
+    <script src="/js/note_editor.js?v=1000"></script>
+    <script src="/js/preview.js?v=1000"></script>
+</body>
+</html>
