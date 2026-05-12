@@ -273,11 +273,11 @@
                         <label class="form-label">格式</label>
                         <div class="format-selector" id="note-format-selector">
                             <label class="format-option">
-                                <input type="radio" name="note-format" value="text" checked>
+                                <input type="radio" name="note-format" value="text" checked onchange="Passworder.onNoteFormatChange()">
                                 <span>📄 纯文本</span>
                             </label>
                             <label class="format-option">
-                                <input type="radio" name="note-format" value="markdown">
+                                <input type="radio" name="note-format" value="markdown" onchange="Passworder.onNoteFormatChange()">
                                 <span>📝 Markdown</span>
                             </label>
                         </div>

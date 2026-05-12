@@ -13,6 +13,15 @@ import (
 //go:embed static/*
 //go:embed static/css/*
 //go:embed static/js/*
+//go:embed static/vendor/*
+//go:embed static/vendor/vditor/*
+//go:embed static/vendor/vditor/dist/*
+//go:embed static/vendor/vditor/dist/js/*
+//go:embed static/vendor/vditor/dist/js/i18n/*
+//go:embed static/vendor/vditor/dist/js/icons/*
+//go:embed static/vendor/vditor/dist/js/lute/*
+//go:embed static/vendor/vditor/dist/css/*
+//go:embed static/vendor/vditor/dist/css/content-theme/*
 var staticFS embed.FS
 
 //go:embed all:migrations/*.sql
