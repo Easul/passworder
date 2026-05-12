@@ -206,6 +206,18 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o d
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 打开 Pull Request
 
+## 致谢
+
+感谢真诚、友善、团结、专业的 Linuxdo 社区的存在，才造就了该项目的出现。
+
+<p>
+  <a href="https://linux.do">
+    <img src="https://img.shields.io/badge/LinuxDo-community-1f6feb" alt="LinuxDo">
+  </a>
+</p>
+
+- [LinuxDo](https://linux.do) 学 ai, 上 L 站!
+
 ## 许可证
 
 MIT License
@@ -235,5 +247,3 @@ SOFTWARE.
 ```
 
 ---
-
-**提示**：请定期备份您的数据库和文件存储目录，以防数据丢失。
