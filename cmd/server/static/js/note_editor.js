@@ -64,8 +64,23 @@ window.PassworderNoteEditorMethods = {
 
   destroyVditor() {
     if (this.vditor) {
-      this.vditor.destroy();
+      try { this.vditor.destroy(); } catch (e) {}
       this.vditor = null;
+    }
+  },
+
+  onNoteFormatChange() {
+    const format = document.querySelector('input[name="note-format"]:checked').value;
+    const note = this.currentNoteId ? this.notes.find(n => n.id === this.currentNoteId) : null;
+    if (format === 'markdown') {
+      const currentBody = note ? note.body : document.getElementById('note-body').value;
+      this.initVditor(currentBody || '');
+    } else {
+      const currentBody = this.vditor ? this.vditor.getValue() : (note ? note.body : '');
+      this.destroyVditor();
+      document.getElementById('note-body-vditor').classList.add('hidden');
+      document.getElementById('note-body').classList.remove('hidden');
+      document.getElementById('note-body').value = currentBody || '';
     }
   },
 
