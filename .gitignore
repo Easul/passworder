@@ -2,11 +2,13 @@
 password.db
 *.db
 storage/
-dist/
 
-# Build artifacts
-passworder
+# Build artifacts (only ignore root-level build output, not source assets)
+/passworder
 *.exe
+
+# Dist build output (not source assets like vendor/vditor/dist)
+/dist/
 
 # IDE
 .idea/
@@ -22,14 +24,14 @@ Thumbs.db
 .env
 
 # Temp and debug files
-temp/
+/temp/
 .playwright-mcp/
 qa-*.md
 
 # Go test cache
 *.test
 *.out
-test/
+/test/
 
 # opencode
 .sisyphus

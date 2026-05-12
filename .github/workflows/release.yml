@@ -146,9 +146,17 @@ jobs:
           
           | 参数 | 说明 |
           |------|------|
-          | `--host` | HTTP 服务地址（默认 0.0.0.0） |
-          | `--port` | HTTP 服务端口（默认 8080） |
+          | `--host` | HTTP 服务地址（默认 127.0.0.1） |
+          | `--port` | HTTP 服务端口（默认 18080） |
           | `--db` | SQLite 数据库路径 |
           | `--storage` | 文件存储目录 |
+          
+          ### 本次更新
+          
+          - 修复 Vditor 离线资源 404 问题（修正 .gitignore 排除规则）
+          - 修复笔记编辑器格式切换报错（currentMode）
+          - 支持导入时按 ID 去重覆盖
+          - 导出文件名增加时分秒
+          - 默认 host 改为 127.0.0.1，端口改为 18080
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
