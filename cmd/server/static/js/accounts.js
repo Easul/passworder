@@ -149,9 +149,25 @@ window.PassworderAccountsMethods = {
       <div class="form-group"><label class="form-label">密码</label><div class="input-group"><input type="password" class="form-input password-input" id="acc-password" value="${this.escapeAttr(acc.password)}" autocomplete="new-password"><button type="button" class="btn btn-secondary" onclick="Passworder.togglePassword('acc-password')">👁️</button><button type="button" class="btn btn-secondary" onclick="Passworder.openGenerator()">🎲</button></div></div>
       <div class="form-group"><label class="form-label">邮箱</label><input type="email" class="form-input" id="acc-email" value="${this.escapeAttr(acc.email)}"></div>
       <div class="form-group"><label class="form-label">注册时间</label><div style="display:flex;gap:8px;align-items:center"><input type="date" class="form-input" id="acc-registration-date" value="${acc.registrationTime ? this.formatDateInput(acc.registrationTime) : ''}" style="flex:1" onkeydown="if(event.key.length===1&&!/[0-9\-]/.test(event.key)&&!event.ctrlKey&&!event.metaKey){event.preventDefault()}" maxlength="10"><input type="time" class="form-input" id="acc-registration-time" value="${acc.registrationTime ? this.formatTimeInput(acc.registrationTime) : ''}" step="60" style="flex:1"></div></div>
-      <div class="form-group"><label class="form-label">注册备注</label><textarea class="form-textarea" id="acc-registration-notes"></textarea></div>
+      <div class="form-group">
+        <div class="textarea-field" id="acc-registration-notes-field">
+          <div class="textarea-field-header">
+            <label class="form-label" for="acc-registration-notes">注册备注</label>
+            <button type="button" class="btn btn-icon btn-sm" onclick="Passworder.toggleTextareaFullscreen('acc-registration-notes', 'acc-registration-notes-field', this)" title="撑满编辑区域">⛶</button>
+          </div>
+          <textarea class="form-textarea textarea-field-input" id="acc-registration-notes"></textarea>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">手机</label><input type="tel" class="form-input" id="acc-phone" value="${this.escapeAttr(acc.phone)}"></div>
-      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="acc-notes"></textarea></div>
+      <div class="form-group">
+        <div class="textarea-field" id="acc-notes-field">
+          <div class="textarea-field-header">
+            <label class="form-label" for="acc-notes">备注</label>
+            <button type="button" class="btn btn-icon btn-sm" onclick="Passworder.toggleTextareaFullscreen('acc-notes', 'acc-notes-field', this)" title="撑满编辑区域">⛶</button>
+          </div>
+          <textarea class="form-textarea textarea-field-input" id="acc-notes"></textarea>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">⏰ 登录提醒</label><div style="display:flex;gap:8px;align-items:center"><input type="date" class="form-input" id="acc-remind-date" value="${acc.remindAt ? this.formatDateInput(acc.remindAt) : ''}" style="flex:1" onkeydown="if(event.key.length===1&&!/[0-9\-]/.test(event.key)&&!event.ctrlKey&&!event.metaKey){event.preventDefault()}" maxlength="10"><input type="time" class="form-input" id="acc-remind-at" value="${acc.remindAt ? this.formatTimeInput(acc.remindAt) : ''}" step="60" style="flex:1"></div><p class="form-hint" style="color:var(--text-secondary);font-size:0.8125rem;margin-top:4px">设置日期和时间后，系统会提醒您定期登录此账号</p></div>
       <div class="form-group" id="reminder-period-group" style="display:none"><label class="form-label">重复周期</label><div style="display:flex;gap:8px;align-items:center"><select class="form-select" id="acc-period-type" style="flex:1" onchange="Passworder.onPeriodTypeChange()"><option value="">不重复</option><option value="yearly">每年</option><option value="monthly">每月</option><option value="weekly">每周</option><option value="daily">每天</option><option value="hourly">每小时</option><option value="days">每N天</option></select><input type="number" class="form-input" id="acc-period-value" value="1" min="1" max="365" style="width:80px;display:none" placeholder="间隔"></div><p class="form-hint" id="period-hint" style="color:var(--text-secondary);font-size:0.8125rem;margin-top:4px"></p></div>
       <div class="form-group"><label class="form-label">提醒邮箱</label><div style="display:flex;gap:8px;align-items:center"><select class="form-select" id="acc-reminder-email-select" style="flex:1" onchange="Passworder.onReminderEmailChange()"><option value="">自定义</option><option value="${this.escapeAttr(acc.email || '')}">${this.escape(acc.email || '') || '账号邮箱'}</option></select><input type="email" class="form-input" id="acc-reminder-email" value="${this.escapeAttr(acc.reminderEmail || acc.email || '')}" placeholder="接收提醒的邮箱地址" style="flex:2"></div></div>
@@ -224,6 +240,51 @@ window.PassworderAccountsMethods = {
     }
   },
 
+  setTextareaFullscreen(textareaId, fieldId, buttonEl, enabled) {
+    const textarea = document.getElementById(textareaId);
+    const field = document.getElementById(fieldId);
+    if (!textarea || !field) return;
+    field.classList.toggle('textarea-field-fullscreen', !!enabled);
+    textarea.classList.toggle('textarea-field-input-fullscreen', !!enabled);
+    if (buttonEl) {
+      buttonEl.textContent = enabled ? '🗗' : '⛶';
+      buttonEl.title = enabled ? '恢复原状' : '撑满编辑区域';
+    }
+    if (enabled) textarea.focus();
+  },
+
+  toggleTextareaFullscreen(textareaId, fieldId, buttonEl) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    this.setTextareaFullscreen(textareaId, fieldId, buttonEl, !field.classList.contains('textarea-field-fullscreen'));
+  },
+
+  resetAccountTextareaFullscreen() {
+    document.querySelectorAll('#account-form .textarea-field').forEach(field => {
+      field.classList.remove('textarea-field-fullscreen');
+      const textarea = field.querySelector('.textarea-field-input');
+      if (textarea) textarea.classList.remove('textarea-field-input-fullscreen');
+      const button = field.querySelector('button');
+      if (button) {
+        button.textContent = '⛶';
+        button.title = '撑满编辑区域';
+      }
+    });
+  },
+
+  formatAccountViewText(value) {
+    if (!value) return '';
+    const text = String(value);
+    const trimmed = text.trim();
+    let formatted = text;
+    if (trimmed) {
+      try {
+        formatted = JSON.stringify(JSON.parse(trimmed), null, 2);
+      } catch (e) {}
+    }
+    return `<pre class="formatted-text-block">${this.escape(formatted)}</pre>`;
+  },
+
   renderAccountView() {
     const acc = this.currentAccount;
     const cat = this.categories.find(c => c.id === acc.categoryId);
@@ -239,7 +300,8 @@ window.PassworderAccountsMethods = {
       ${acc.email ? `<div class="form-group"><label class="form-label">邮箱</label><div class="input-group"><div class="form-input" style="flex:1;background:var(--bg)">${this.escape(acc.email)}</div><button class="btn btn-secondary" onclick="Passworder.copyText('${this.escape(acc.email)}')">复制</button></div></div>` : ''}
       ${acc.reminderEmail ? `<div class="form-group"><label class="form-label">默认收信邮箱</label><div class="form-input" style="background:var(--bg)">${this.escape(acc.reminderEmail)}</div></div>` : ''}
       ${acc.phone ? `<div class="form-group"><label class="form-label">手机</label><div class="input-group"><div class="form-input" style="flex:1;background:var(--bg)">${this.escape(acc.phone)}</div><button class="btn btn-secondary" onclick="Passworder.copyText('${this.escape(acc.phone)}')">复制</button></div></div>` : ''}
-      ${acc.notes ? `<div class="form-group"><label class="form-label">备注</label><div class="form-textarea" style="background:var(--bg);min-height:auto">${this.escape(acc.notes)}</div></div>` : ''}
+      ${acc.registrationNotes ? `<div class="form-group"><label class="form-label">注册备注</label><div class="form-textarea" style="background:var(--bg);min-height:auto">${this.formatAccountViewText(acc.registrationNotes)}</div></div>` : ''}
+      ${acc.notes ? `<div class="form-group"><label class="form-label">备注</label><div class="form-textarea" style="background:var(--bg);min-height:auto">${this.formatAccountViewText(acc.notes)}</div></div>` : ''}
       ${acc.remindAt ? `<div class="form-group"><label class="form-label">⏰ 登录提醒</label><div class="form-input" style="background:var(--bg)">${this.formatDate(acc.remindAt)}</div></div>` : ''}
     `;
   },

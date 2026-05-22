@@ -7,6 +7,7 @@ window.PassworderNoteEditorMethods = {
     const format = note ? note.bodyFormat : 'text';
     document.querySelectorAll('input[name="note-format"]').forEach(r => { r.checked = r.value === format; });
     this.currentNoteId = id || null;
+    this.setNoteEditFullscreen(false);
     this.openModal('note-modal');
     if (format === 'markdown') {
       this.initVditor(note ? note.body : '');
@@ -20,6 +21,23 @@ window.PassworderNoteEditorMethods = {
     this.pendingFiles = [];
     this.renderNoteAttachmentList(note);
     if (note) this.loadNoteAttachments(note.id);
+  },
+
+  setNoteEditFullscreen(enabled) {
+    const modal = document.querySelector('#note-modal .modal');
+    const toggle = document.getElementById('note-edit-fullscreen-toggle');
+    if (!modal) return;
+    modal.classList.toggle('modal-fullscreen', !!enabled);
+    if (toggle) {
+      toggle.textContent = enabled ? '🗗' : '⛶';
+      toggle.title = enabled ? '恢复原状' : '撑满编辑区域';
+    }
+  },
+
+  toggleNoteEditFullscreen() {
+    const modal = document.querySelector('#note-modal .modal');
+    if (!modal) return;
+    this.setNoteEditFullscreen(!modal.classList.contains('modal-fullscreen'));
   },
 
   async initVditor(initialValue) {

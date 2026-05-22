@@ -252,7 +252,10 @@
             <div class="modal">
                 <div class="modal-header">
                     <h3 class="modal-title" id="note-modal-title">新建笔记</h3>
-                    <button type="button" class="modal-close" onclick="Passworder.closeModal('note-modal')">×</button>
+                    <div class="modal-header-actions">
+                        <button type="button" class="btn btn-icon btn-sm" id="note-edit-fullscreen-toggle" onclick="Passworder.toggleNoteEditFullscreen()" title="撑满编辑区域">⛶</button>
+                        <button type="button" class="modal-close" onclick="Passworder.closeModal('note-modal')">×</button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
@@ -358,7 +361,8 @@
                         <h3 class="modal-title" id="note-view-title">笔记内容</h3>
                         <span id="note-view-remarks" style="font-style:italic;color:var(--text-secondary);font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;display:flex;align-items:center;gap:4px"><span>📝</span><span></span></span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px">
+                    <div class="modal-header-actions" style="gap:8px">
+                        <button type="button" class="btn btn-icon btn-sm" id="note-view-fullscreen-toggle" onclick="Passworder.toggleNoteViewFullscreen()" title="撑满浏览区域">⛶</button>
                         <button type="button" class="btn btn-icon btn-sm" onclick="Passworder.copyNoteContent()" title="复制内容">📋</button>
                         <button type="button" class="modal-close" onclick="Passworder.closeModal('note-view-modal')">×</button>
                     </div>

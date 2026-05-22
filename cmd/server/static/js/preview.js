@@ -331,6 +331,7 @@ window.PassworderPreviewMethods = {
     const note = this.notes.find(n => n.id === id);
     if (!note) return;
     this.currentPreviewNote = note;
+    this.setNoteViewFullscreen(false);
     document.getElementById('note-view-title').textContent = note.title || '笔记内容';
     const remarksEl = document.getElementById('note-view-remarks');
     if (remarksEl) {
@@ -344,11 +345,36 @@ window.PassworderPreviewMethods = {
       let html = window.marked.parse(note.body || '');
       if (this.dompurifyLoaded && window.DOMPurify) html = window.DOMPurify.sanitize(html);
       contentDiv.innerHTML = html;
+      contentDiv.classList.remove('note-view-content-empty');
     } else {
-      contentDiv.innerHTML = `<pre>${this.escape(note.body || '')}</pre>`;
+      const body = note.body || '';
+      if (body.trim()) {
+        contentDiv.innerHTML = `<pre>${this.escape(body)}</pre>`;
+        contentDiv.classList.remove('note-view-content-empty');
+      } else {
+        contentDiv.innerHTML = '';
+        contentDiv.classList.add('note-view-content-empty');
+      }
     }
     await this.renderNoteViewAttachments(note.id);
     this.openModal('note-view-modal');
+  },
+
+  setNoteViewFullscreen(enabled) {
+    const modal = document.querySelector('#note-view-modal .modal');
+    const toggle = document.getElementById('note-view-fullscreen-toggle');
+    if (!modal) return;
+    modal.classList.toggle('modal-fullscreen', !!enabled);
+    if (toggle) {
+      toggle.textContent = enabled ? '🗗' : '⛶';
+      toggle.title = enabled ? '恢复原状' : '撑满浏览区域';
+    }
+  },
+
+  toggleNoteViewFullscreen() {
+    const modal = document.querySelector('#note-view-modal .modal');
+    if (!modal) return;
+    this.setNoteViewFullscreen(!modal.classList.contains('modal-fullscreen'));
   },
 
   copyNoteContent() {

@@ -50,9 +50,16 @@ window.PassworderUiMethods = {
       this.currentPreviewNote = null;
     }
     if (id === 'markdown-modal') this.currentMarkdownNote = null;
+    if (id === 'account-modal') this.resetAccountTextareaFullscreen?.();
     if (id === 'note-modal') {
       this.currentNoteId = null;
+      this.setNoteEditFullscreen?.(false);
       this.destroyVditor?.();
+    }
+    if (id === 'note-view-modal') {
+      this.setNoteViewFullscreen?.(false);
+      const contentDiv = document.getElementById('note-view-content');
+      if (contentDiv) contentDiv.classList.remove('note-view-content-empty');
     }
   },
 
@@ -114,7 +121,11 @@ window.PassworderUiMethods = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay.active').forEach(m => {
-          m.classList.remove('active');
+          if (m.id) {
+            this.closeModal(m.id);
+          } else {
+            m.classList.remove('active');
+          }
         });
         document.body.style.overflow = '';
       }
