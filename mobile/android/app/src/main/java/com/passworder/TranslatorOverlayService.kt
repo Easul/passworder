@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -52,6 +53,8 @@ class TranslatorOverlayService : Service() {
     private lateinit var inputView: EditText
     private lateinit var outputView: TextView
     private lateinit var translateButton: Button
+    private var overlayParams: WindowManager.LayoutParams? = null
+    private var isCollapsed = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -70,7 +73,7 @@ class TranslatorOverlayService : Service() {
     private fun showOverlay() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val params = WindowManager.LayoutParams(
-            dp(320),
+            dp(280),
             WindowManager.LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -86,6 +89,7 @@ class TranslatorOverlayService : Service() {
             y = dp(96)
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
+        overlayParams = params
         val root = buildOverlayView(params)
         overlayView = root
         windowManager.addView(root, params)
@@ -96,13 +100,14 @@ class TranslatorOverlayService : Service() {
     private fun buildOverlayView(params: WindowManager.LayoutParams): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(10), dp(12), dp(12))
+            setPadding(dp(10), dp(8), dp(10), dp(10))
             background = GradientDrawable().apply {
                 setColor(Color.WHITE)
-                cornerRadius = dp(14).toFloat()
+                cornerRadius = dp(12).toFloat()
                 setStroke(1, Color.rgb(226, 232, 240))
             }
             elevation = dp(8).toFloat()
+            setOnTouchListener(dragListener(params))
         }
 
         val header = LinearLayout(this).apply {
@@ -111,21 +116,26 @@ class TranslatorOverlayService : Service() {
             setOnTouchListener(dragListener(params))
         }
         header.addView(TextView(this).apply {
-            text = "翻译"
-            textSize = 16f
+            text = "🌐 翻译"
+            textSize = 15f
             setTextColor(Color.rgb(15, 23, 42))
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTypeface(typeface, Typeface.BOLD)
         }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        header.addView(Button(this).apply {
+            text = "●"
+            setOnClickListener { collapseOverlay() }
+        }, LinearLayout.LayoutParams(dp(40), dp(36)))
         header.addView(Button(this).apply {
             text = "×"
             setOnClickListener { stopSelf() }
-        }, LinearLayout.LayoutParams(dp(44), dp(40)))
+        }, LinearLayout.LayoutParams(dp(40), dp(36)))
         root.addView(header)
 
         inputView = EditText(this).apply {
             hint = "输入中文或英文"
-            minLines = 3
-            maxLines = 6
+            textSize = 14f
+            minLines = 2
+            maxLines = 4
             setSingleLine(false)
         }
         root.addView(inputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -149,33 +159,72 @@ class TranslatorOverlayService : Service() {
         root.addView(actions)
 
         outputView = TextView(this).apply {
-            textSize = 15f
+            textSize = 14f
             setTextColor(Color.rgb(15, 23, 42))
             setTextIsSelectable(true)
-            setPadding(dp(10), dp(10), dp(10), dp(10))
+            setPadding(dp(8), dp(8), dp(8), dp(8))
             background = GradientDrawable().apply {
                 setColor(Color.rgb(248, 250, 252))
                 cornerRadius = dp(8).toFloat()
                 setStroke(1, Color.rgb(226, 232, 240))
             }
         }
-        root.addView(outputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(96)).apply {
-            topMargin = dp(8)
-            bottomMargin = dp(8)
+        root.addView(outputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(72)).apply {
+            topMargin = dp(6)
+            bottomMargin = dp(6)
         })
 
         root.addView(Button(this).apply {
             text = "复制结果"
             setOnClickListener { copyResult() }
-        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)))
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40)))
         return root
     }
 
-    private fun dragListener(params: WindowManager.LayoutParams): View.OnTouchListener {
+    private fun collapseOverlay() {
+        val params = overlayParams ?: return
+        val oldView = overlayView ?: return
+        windowManager.removeView(oldView)
+        isCollapsed = true
+        params.width = dp(48)
+        params.height = dp(48)
+        val dot = buildCollapsedView(params)
+        overlayView = dot
+        windowManager.addView(dot, params)
+    }
+
+    private fun expandOverlay() {
+        val params = overlayParams ?: return
+        val oldView = overlayView ?: return
+        windowManager.removeView(oldView)
+        isCollapsed = false
+        params.width = dp(280)
+        params.height = WindowManager.LayoutParams.WRAP_CONTENT
+        val root = buildOverlayView(params)
+        overlayView = root
+        windowManager.addView(root, params)
+    }
+
+    private fun buildCollapsedView(params: WindowManager.LayoutParams): View {
+        return TextView(this).apply {
+            text = "🌐"
+            textSize = 22f
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(79, 70, 229))
+            }
+            elevation = dp(8).toFloat()
+            setOnTouchListener(dragListener(params) { expandOverlay() })
+        }
+    }
+
+    private fun dragListener(params: WindowManager.LayoutParams, onTap: (() -> Unit)? = null): View.OnTouchListener {
         var startX = 0
         var startY = 0
         var downRawX = 0f
         var downRawY = 0f
+        var moved = false
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -183,15 +232,23 @@ class TranslatorOverlayService : Service() {
                     startY = params.y
                     downRawX = event.rawX
                     downRawY = event.rawY
+                    moved = false
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    params.x = startX + (event.rawX - downRawX).toInt()
-                    params.y = startY + (event.rawY - downRawY).toInt()
+                    val deltaX = event.rawX - downRawX
+                    val deltaY = event.rawY - downRawY
+                    moved = moved || kotlin.math.abs(deltaX) > dp(4) || kotlin.math.abs(deltaY) > dp(4)
+                    params.x = startX + deltaX.toInt()
+                    params.y = startY + deltaY.toInt()
                     overlayView?.let { windowManager.updateViewLayout(it, params) }
                     true
                 }
-                else -> true
+                MotionEvent.ACTION_UP -> {
+                    if (!moved) onTap?.invoke()
+                    true
+                }
+                else -> false
             }
         }
     }
