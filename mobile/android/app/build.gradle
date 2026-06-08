@@ -10,6 +10,7 @@ def releaseKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH') ?: project.find
 def releaseKeystorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: project.findProperty('androidKeystorePassword')
 def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS') ?: project.findProperty('androidKeyAlias')
 def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD') ?: project.findProperty('androidKeyPassword')
+def localServerListenHost = System.getenv('LOCAL_SERVER_LISTEN_HOST') ?: project.findProperty('localServerListenHost') ?: '127.0.0.1'
 def hasReleaseKeystore = releaseKeystorePath != null && releaseKeystorePath.toString().trim() &&
         releaseKeystorePassword != null && releaseKeystorePassword.toString().trim() &&
         releaseKeyAlias != null && releaseKeyAlias.toString().trim() &&
@@ -44,7 +45,8 @@ android {
         targetSdk 34
         versionCode androidVersionCode
         versionName androidVersionName
-        buildConfigField "String", "LOCAL_SERVER_HOST", '"127.0.0.1"'
+        buildConfigField "String", "LOCAL_SERVER_LISTEN_HOST", "\"${localServerListenHost.toString()}\""
+        buildConfigField "String", "LOCAL_SERVER_WEB_HOST", '"127.0.0.1"'
         buildConfigField "int", "LOCAL_SERVER_PORT", "18080"
 
         ndk {

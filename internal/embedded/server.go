@@ -88,7 +88,7 @@ func (s *EmbeddedServer) Start() error {
 		return nil
 	}
 
-	listener, err := net.Listen("tcp", s.httpServer.Addr)
+	listener, err := net.Listen(listenerNetwork(s.cfg.Host), s.httpServer.Addr)
 	if err != nil {
 		return err
 	}
@@ -237,4 +237,11 @@ func startAutoReminder(ctx context.Context, db *sqlx.DB, intervalMinutes int) {
 
 func serverAddress(cfg *config.Config) string {
 	return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+}
+
+func listenerNetwork(host string) string {
+	if ip := net.ParseIP(host); ip != nil && ip.To4() != nil {
+		return "tcp4"
+	}
+	return "tcp"
 }

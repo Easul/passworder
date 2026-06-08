@@ -30,6 +30,12 @@ window.PassworderSettingsMethods = {
 
     try {
       await this.api('/server-config', { method: 'PUT', body: config });
+      if (window.PassworderShared?.isAndroidApp?.() && typeof window.PassworderAndroid?.restartServer === 'function') {
+        this.showToast('success', '服务器配置已保存，正在重启本地服务');
+        this.closeModal('settings-modal');
+        window.PassworderAndroid.restartServer(config.host === '0.0.0.0');
+        return;
+      }
       this.showToast('success', '服务器配置已保存，重启后生效');
     } catch (e) {
       this.showToast('error', e.message);

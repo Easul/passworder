@@ -327,6 +327,10 @@ window.PassworderPreviewMethods = {
       const res = await fetch(`/api/note-attachments/${attachmentId}/preview`, { headers: this.token ? { 'Authorization': this.token } : {} });
       if (!res.ok) throw new Error('预览失败');
       const blob = await res.blob();
+      if (await window.PassworderShared.openBlob(blob, originalName || 'PDF', 'application/pdf')) {
+        this.showToast('success', '正在打开 PDF');
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const iframe = document.getElementById('pdf-preview-frame');
       iframe.src = url;
@@ -366,7 +370,7 @@ window.PassworderPreviewMethods = {
     const res = await fetch(`/api/note-attachments/${att.id}`, { headers: this.token ? { 'Authorization': this.token } : {} });
     if (!res.ok) throw new Error('下载失败');
     const blob = await res.blob();
-    const zip = await JSZip.loadAsync(blob);
+    const zip = await window.JSZip.loadAsync(blob);
     let treeHtml = '<ul class="archive-tree">';
     zip.forEach((relativePath, zipEntry) => {
       const isDir = zipEntry.dir;
@@ -392,18 +396,18 @@ window.PassworderPreviewMethods = {
     if (['doc', 'docx'].includes(ext)) {
       await this.loadMammoth();
       const arrayBuffer = await res.arrayBuffer();
-      const result = await mammoth.convertToHtml({ arrayBuffer });
+      const result = await window.mammoth.convertToHtml({ arrayBuffer });
       document.getElementById('document-preview-content').innerHTML = result.value;
       document.getElementById('document-preview-title').textContent = `📝 ${this.escape(att.originalName)}`;
       this.openModal('document-preview-modal');
     } else if (['xls', 'xlsx'].includes(ext)) {
       await this.loadSheetJS();
       const arrayBuffer = await res.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
       let html = '<div class="excel-preview">';
       workbook.SheetNames.forEach(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const csv = window.XLSX.utils.sheet_to_csv(worksheet);
         html += `<h4>📊 ${this.escape(sheetName)}</h4><pre class="excel-sheet">${this.escape(csv)}</pre>`;
       });
       html += '</div>';
@@ -441,7 +445,7 @@ window.PassworderPreviewMethods = {
         this.openModal('image-preview-modal');
       } else if (ext === 'zip') {
         await this.loadJSZip();
-        const zip = await JSZip.loadAsync(blob);
+        const zip = await window.JSZip.loadAsync(blob);
         let treeHtml = '<ul class="archive-tree">';
         zip.forEach((relativePath, zipEntry) => {
           const isDir = zipEntry.dir;
@@ -453,6 +457,10 @@ window.PassworderPreviewMethods = {
         document.getElementById('archive-preview-title').textContent = `📦 ${this.escape(note.originalName || '压缩包')}`;
         this.openModal('archive-preview-modal');
       } else if (ext === 'pdf') {
+        if (await window.PassworderShared.openBlob(blob, note.originalName || 'PDF', 'application/pdf')) {
+          this.showToast('success', '正在打开 PDF');
+          return;
+        }
         const url = URL.createObjectURL(blob);
         const iframe = document.getElementById('pdf-preview-frame');
         iframe.src = url;
@@ -461,18 +469,18 @@ window.PassworderPreviewMethods = {
       } else if (['doc', 'docx'].includes(ext)) {
         await this.loadMammoth();
         const arrayBuffer = await blob.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const result = await window.mammoth.convertToHtml({ arrayBuffer });
         document.getElementById('document-preview-content').innerHTML = result.value;
         document.getElementById('document-preview-title').textContent = `📝 ${this.escape(note.originalName || 'Word文档')}`;
         this.openModal('document-preview-modal');
       } else if (['xls', 'xlsx'].includes(ext)) {
         await this.loadSheetJS();
         const arrayBuffer = await blob.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
         let html = '<div class="excel-preview">';
         workbook.SheetNames.forEach(sheetName => {
           const worksheet = workbook.Sheets[sheetName];
-          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          const csv = window.XLSX.utils.sheet_to_csv(worksheet);
           html += `<h4>📊 ${this.escape(sheetName)}</h4><pre class="excel-sheet">${this.escape(csv)}</pre>`;
         });
         html += '</div>';

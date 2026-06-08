@@ -21,8 +21,13 @@ func StartServer(host string, port int, dbPath, storagePath string) string {
 		return ""
 	}
 
+	hostOverride := host
+	if hostOverride == config.DefaultHost {
+		hostOverride = ""
+	}
+
 	server, err := embedded.NewEmbeddedServer(config.CLIOverrides{
-		Host:       host,
+		Host:       hostOverride,
 		Port:       port,
 		DBPath:     dbPath,
 		StorageDir: storagePath,

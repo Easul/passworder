@@ -62,6 +62,15 @@ window.PassworderShared = {
     URL.revokeObjectURL(url);
   },
 
+  async openBlob(blob, filename, mimeType) {
+    if (!this.isAndroidApp()) return false;
+    const safeFilename = filename || 'preview';
+    const resolvedMimeType = mimeType || blob?.type || 'application/octet-stream';
+    const base64 = await this.blobToBase64(blob);
+    window.PassworderAndroid.openBase64File(base64, safeFilename, resolvedMimeType);
+    return true;
+  },
+
   blobToBase64(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
