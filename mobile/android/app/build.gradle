@@ -3,20 +3,60 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def targetAbi = System.getenv('TARGET_ABI') ?: project.findProperty('targetAbi')
+def buildVersionCodeOverride = System.getenv('BUILD_VERSION_CODE') ?: project.findProperty('buildVersionCode')
+def buildVersionLabel = System.getenv('BUILD_VERSION_LABEL') ?: project.findProperty('buildVersionLabel')
+def versionCodeOffset = 5000
+def fallbackVersionCode = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--count', 'main'
+            standardOutput = stdout
+        }
+        return versionCodeOffset + stdout.toString().trim().toInteger()
+    } catch (Exception ignored) {
+        return versionCodeOffset + 1
+    }
+}
+def androidVersionCode = buildVersionCodeOverride != null && buildVersionCodeOverride.toString().trim() ? buildVersionCodeOverride.toString().toInteger() : fallbackVersionCode()
+def androidVersionName = buildVersionLabel != null && buildVersionLabel.toString().trim() ? buildVersionLabel.toString() : "1.0+dev"
+
 android {
     namespace 'com.passworder'
     compileSdk 34
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         applicationId "com.passworder"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode androidVersionCode
+        versionName androidVersionName
+        buildConfigField "String", "LOCAL_SERVER_HOST", '"127.0.0.1"'
+        buildConfigField "int", "LOCAL_SERVER_PORT", "18080"
+
+        ndk {
+            if (targetAbi != null && targetAbi.toString().trim()) {
+                abiFilters targetAbi.toString()
+            } else {
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            initWith signingConfigs.debug
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -31,6 +71,7 @@ android {
 }
 
 dependencies {
+    implementation files('libs/passworder-mobilebridge.aar')
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

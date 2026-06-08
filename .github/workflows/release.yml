@@ -18,145 +18,193 @@ jobs:
   build-linux-windows:
     name: Build Linux and Windows
     runs-on: ubuntu-latest
-    
     strategy:
       matrix:
         include:
           - os: linux
-            goos: linux
-            goarch: amd64
-            cgo: '1'
-            ext: ''
-            
+            script: scripts/build-linux-amd64.sh
+            artifact: passworder-linux-amd64
           - os: windows
-            goos: windows
-            goarch: amd64
-            cgo: '0'
-            ext: '.exe'
-    
+            script: scripts/build-windows-amd64.sh
+            artifact: passworder-windows-amd64.exe
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25.0'
-    
-    - name: Install GCC (for Linux CGO)
-      if: matrix.os == 'linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc
-    
-    - name: Build
-      env:
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
-        CGO_ENABLED: ${{ matrix.cgo }}
-        VERSION: ${{ github.ref_name || github.event.inputs.version }}
-      run: |
-        mkdir -p dist
-        go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o dist/passworder-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/server
-        ls -la dist/
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: passworder-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
-        path: dist/passworder-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
-        retention-days: 7
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Install GCC (for Linux CGO)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc
+
+      - name: Build
+        env:
+          VERSION: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
+        run: ${{ matrix.script }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          retention-days: 7
 
   build-macos:
     name: Build macOS
     runs-on: macos-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25.0'
-    
-    - name: Build macOS amd64
-      env:
-        GOOS: darwin
-        GOARCH: amd64
-        CGO_ENABLED: '1'
-        VERSION: ${{ github.ref_name || github.event.inputs.version }}
-      run: |
-        mkdir -p dist
-        go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o dist/passworder-darwin-amd64 ./cmd/server
-        ls -la dist/
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: passworder-darwin-amd64
-        path: dist/passworder-darwin-amd64
-        retention-days: 7
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Build macOS amd64
+        env:
+          VERSION: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
+        run: scripts/build-macos-amd64.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: passworder-darwin-amd64
+          path: dist/passworder-darwin-amd64
+          retention-days: 7
+
+  build-android-apk:
+    name: Build Android APK (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - abi: arm32
+            artifact: passworder-android-arm32-release.apk
+          - abi: arm64
+            artifact: passworder-android-arm64-release.apk
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android packages
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;26.1.10909125"
+
+      - name: Get version info
+        id: version
+        run: |
+          COMMIT_HASH=$(git rev-parse --short=6 HEAD)
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          BUILD_VERSION="${VERSION}+${COMMIT_HASH}"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          COMMIT_COUNT=$(git rev-list --count origin/main)
+          VERSION_CODE=$((5000 + COMMIT_COUNT))
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
+          echo "build_version=${BUILD_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "Build version: ${BUILD_VERSION}"
+          echo "Version code: ${VERSION_CODE}"
+
+      - name: Build APK
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+          BUILD_VERSION_LABEL: ${{ steps.version.outputs.build_version }}
+          BUILD_VERSION_CODE: ${{ steps.version.outputs.version_code }}
+        run: scripts/build-android-apk.sh ${{ matrix.abi }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/android/${{ matrix.artifact }}
+          retention-days: 7
 
   release:
     name: Create Release
-    needs: [build-linux-windows, build-macos]
+    needs: [build-linux-windows, build-macos, build-android-apk]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
+
     steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: dist/
-        pattern: passworder-*
-        merge-multiple: true
-    
-    - name: Display artifacts
-      run: |
-        ls -la dist/
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: dist/*
-        generate_release_notes: true
-        body: |
-          ## 快速开始
-          
-          ### Linux (amd64)
-          ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/passworder-linux-amd64
-          chmod +x passworder-linux-amd64
-          ./passworder-linux-amd64
-          ```
-          
-          ### macOS (amd64)
-          ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/passworder-darwin-amd64
-          chmod +x passworder-darwin-amd64
-          ./passworder-darwin-amd64
-          ```
-          
-          ### Windows (amd64)
-          
-          下载 `passworder-windows-amd64.exe` 并直接运行。
-          
-          ### 配置参数
-          
-          | 参数 | 说明 |
-          |------|------|
-          | `--host` | HTTP 服务地址（默认 127.0.0.1） |
-          | `--port` | HTTP 服务端口（默认 18080） |
-          | `--db` | SQLite 数据库路径 |
-          | `--storage` | 文件存储目录 |
-          
-          ### 本次更新
-          
-          - 修复 Vditor 离线资源 404 问题（修正 .gitignore 排除规则）
-          - 修复笔记编辑器格式切换报错（currentMode）
-          - 支持导入时按 ID 去重覆盖
-          - 导出文件名增加时分秒
-          - 默认 host 改为 127.0.0.1，端口改为 18080
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          pattern: passworder-*
+          merge-multiple: true
+
+      - name: Display artifacts
+        run: ls -la dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## 快速开始
+
+            ### Linux (amd64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/passworder-linux-amd64
+            chmod +x passworder-linux-amd64
+            ./passworder-linux-amd64
+            ```
+
+            ### macOS (amd64)
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/passworder-darwin-amd64
+            chmod +x passworder-darwin-amd64
+            ./passworder-darwin-amd64
+            ```
+
+            ### Windows (amd64)
+            下载 `passworder-windows-amd64.exe` 并直接运行。
+
+            ### Android APK
+            - `passworder-android-arm32-release.apk`：armeabi-v7a
+            - `passworder-android-arm64-release.apk`：arm64-v8a
+
+            ### 配置参数
+            | 参数 | 说明 |
+            |------|------|
+            | `--host` | HTTP 服务地址（默认 127.0.0.1） |
+            | `--port` | HTTP 服务端口（默认 18080） |
+            | `--db` | SQLite 数据库路径 |
+            | `--storage` | 文件存储目录 |
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

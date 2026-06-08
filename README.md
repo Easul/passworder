@@ -30,7 +30,7 @@ git clone https://github.com/yourusername/passworder.git
 cd passworder
 
 # 编译
-go build -o dist/passworder ./cmd/server
+./scripts/build-linux-amd64.sh
 
 # 运行（默认端口 18080）
 ./dist/passworder
@@ -97,6 +97,23 @@ PASSORDER_HOST=0.0.0.0 PASSORDER_PORT=9000 ./dist/passworder
 ./dist/passworder --host 0.0.0.0 --port 9000 --db /data/password.db --storage /data/storage
 ```
 
+## 移动端构建
+
+Android 工程位于 `mobile/android/`。Go 服务通过 `mobile/bridge` 使用 gomobile 生成 AAR，APK 构建脚本会按 ABI 单独生成依赖并打包：
+
+```bash
+# 构建 32 位 APK
+./scripts/build-android-apk.sh arm32
+
+# 构建 64 位 APK
+./scripts/build-android-apk.sh arm64
+
+# 构建两个 ABI
+./scripts/build-android-apk.sh all
+```
+
+APK 输出到 `dist/android/`。生成的 Gradle 缓存、AAR、APK 和中间构建目录已写入 `.gitignore`，不需要提交。发布流水线使用 `版本标签+6位提交哈希` 作为 `versionName`，使用 `5000 + main 分支提交数` 作为 `versionCode`。
+
 ## 数据备份
 
 ### 导出数据
@@ -116,12 +133,11 @@ PASSORDER_HOST=0.0.0.0 PASSORDER_PORT=9000 ./dist/passworder
 .
 ├── cmd/server/           # 服务入口
 │   ├── main.go              # 主程序
-│   ├── static/              # 前端资源（嵌入二进制）
-│   │   ├── index.html       # 主页面
-│   │   ├── css/style.css    # 样式文件
-│   │   └── js/app.js        # 前端逻辑
-│   └── migrations/        # 数据库迁移文件
 ├── internal/
+│   ├── embedded/          # 嵌入式 HTTP 服务、静态资源和迁移
+│   │   └── assets/
+│   │       ├── static/    # 前端资源（嵌入二进制）
+│   │       └── migrations/# 数据库迁移文件
 │   ├── config/            # 配置管理
 │   ├── database/          # 数据库连接与迁移
 │   ├── handler/           # HTTP 接口处理
@@ -129,6 +145,7 @@ PASSORDER_HOST=0.0.0.0 PASSORDER_PORT=9000 ./dist/passworder
 │   ├── repository/        # 数据访问层
 │   ├── model/             # 数据模型
 │   └── storage/           # 文件存储
+├── mobile/                # Android/iOS 工程与 gomobile bridge
 ├── docs/                  # 文档
 └── dist/                  # 构建输出（不提交到git）
 ```
@@ -142,7 +159,7 @@ PASSORDER_HOST=0.0.0.0 PASSORDER_PORT=9000 ./dist/passworder
 
 ## 数据库迁移
 
-项目使用数据库迁移管理模式，所有迁移文件位于 `cmd/server/migrations/` 目录：
+项目使用数据库迁移管理模式，所有迁移文件位于 `internal/embedded/assets/migrations/` 目录：
 
 - 文件名格式：`XXX_description.up.sql`
 - 服务启动时自动检查并执行未应用的迁移
@@ -179,14 +196,16 @@ go test ./...
 go run ./cmd/server
 
 # 构建发布版本
-# Linux
-CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-linux-amd64 ./cmd/server
+./scripts/build-linux-amd64.sh
+./scripts/build-macos-amd64.sh
+./scripts/build-windows-amd64.sh
 
-# macOS
-CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-darwin-amd64 ./cmd/server
-
-# Windows（无 CGO 依赖）
-GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/passworder-windows-amd64.exe ./cmd/server
+# Android gomobile 依赖和 APK
+# arm32: armeabi-v7a；arm64: arm64-v8a
+./scripts/build-android-server.sh arm32
+./scripts/build-android-server.sh arm64
+./scripts/build-android-apk.sh arm32
+./scripts/build-android-apk.sh arm64
 ```
 
 ## 文档

@@ -1,6 +1,22 @@
 window.PassworderPreviewMethods = {
   pendingFiles: [],
   noteAttachments: {},
+  imagePreviewState: {
+    scale: 1,
+    minScale: 1,
+    maxScale: 4,
+    translateX: 0,
+    translateY: 0,
+    dragStartX: 0,
+    dragStartY: 0,
+    startTranslateX: 0,
+    startTranslateY: 0,
+    pinchStartDistance: 0,
+    pinchStartScale: 1,
+    lastTapAt: 0,
+    isDragging: false,
+    gestureBound: false,
+  },
 
   async loadNoteAttachments(noteId) {
     try {
@@ -9,6 +25,182 @@ window.PassworderPreviewMethods = {
       this.renderNoteAttachmentList(this.notes.find(n => n.id === noteId));
     } catch (e) {
       console.error('Failed to load attachments:', e);
+    }
+  },
+
+  initImagePreviewInteractions() {
+    const img = document.getElementById('preview-image');
+    const stage = document.getElementById('preview-image-stage');
+    const state = this.imagePreviewState;
+    if (!img || !stage || state.gestureBound) return;
+
+    const distanceBetweenTouches = (touches) => {
+      const [a, b] = touches;
+      return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    };
+
+    const handlePointerMove = (clientX, clientY) => {
+      if (!state.isDragging || state.scale <= state.minScale) return;
+      state.translateX = state.startTranslateX + (clientX - state.dragStartX);
+      state.translateY = state.startTranslateY + (clientY - state.dragStartY);
+      this.applyImagePreviewTransform();
+    };
+
+    img.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      this.toggleImagePreviewZoom(event.clientX, event.clientY);
+    });
+
+    img.addEventListener('mousedown', (event) => {
+      if (state.scale <= state.minScale) return;
+      event.preventDefault();
+      state.isDragging = true;
+      state.dragStartX = event.clientX;
+      state.dragStartY = event.clientY;
+      state.startTranslateX = state.translateX;
+      state.startTranslateY = state.translateY;
+      img.classList.add('is-dragging');
+    });
+
+    document.addEventListener('mousemove', (event) => {
+      handlePointerMove(event.clientX, event.clientY);
+    });
+
+    document.addEventListener('mouseup', () => {
+      state.isDragging = false;
+      img.classList.remove('is-dragging');
+    });
+
+    img.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const delta = event.deltaY < 0 ? 0.28 : -0.28;
+      this.setImagePreviewScale(state.scale + delta, event.clientX, event.clientY);
+    }, { passive: false });
+
+    stage.addEventListener('touchstart', (event) => {
+      if (event.touches.length === 2) {
+        event.preventDefault();
+        state.pinchStartDistance = distanceBetweenTouches(event.touches);
+        state.pinchStartScale = state.scale;
+        state.isDragging = false;
+        return;
+      }
+
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const now = Date.now();
+      if (now - state.lastTapAt < 260) {
+        event.preventDefault();
+        this.toggleImagePreviewZoom(touch.clientX, touch.clientY);
+        state.lastTapAt = 0;
+        return;
+      }
+      state.lastTapAt = now;
+      if (state.scale > state.minScale) {
+        state.isDragging = true;
+        state.dragStartX = touch.clientX;
+        state.dragStartY = touch.clientY;
+        state.startTranslateX = state.translateX;
+        state.startTranslateY = state.translateY;
+        img.classList.add('is-dragging');
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchmove', (event) => {
+      if (event.touches.length === 2) {
+        event.preventDefault();
+        const distance = distanceBetweenTouches(event.touches);
+        if (!state.pinchStartDistance) {
+          state.pinchStartDistance = distance;
+          state.pinchStartScale = state.scale;
+          return;
+        }
+        this.setImagePreviewScale(state.pinchStartScale * (distance / state.pinchStartDistance));
+        return;
+      }
+      if (event.touches.length === 1 && state.isDragging) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        handlePointerMove(touch.clientX, touch.clientY);
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', () => {
+      state.isDragging = false;
+      state.pinchStartDistance = 0;
+      img.classList.remove('is-dragging');
+    });
+
+    state.gestureBound = true;
+  },
+
+  clampImagePreviewOffset(value, axis) {
+    const stage = document.getElementById('preview-image-stage');
+    const img = document.getElementById('preview-image');
+    const state = this.imagePreviewState;
+    if (!stage || !img) return value;
+    const stageSize = axis === 'x' ? stage.clientWidth : stage.clientHeight;
+    const imageSize = axis === 'x' ? img.clientWidth : img.clientHeight;
+    const scaledSize = imageSize * state.scale;
+    const maxOffset = Math.max(0, (scaledSize - stageSize) / 2);
+    return Math.min(maxOffset, Math.max(-maxOffset, value));
+  },
+
+  applyImagePreviewTransform() {
+    const img = document.getElementById('preview-image');
+    const state = this.imagePreviewState;
+    if (!img) return;
+    if (state.scale <= state.minScale) {
+      state.translateX = 0;
+      state.translateY = 0;
+    } else {
+      state.translateX = this.clampImagePreviewOffset(state.translateX, 'x');
+      state.translateY = this.clampImagePreviewOffset(state.translateY, 'y');
+    }
+    img.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`;
+    img.classList.toggle('is-zoomed', state.scale > state.minScale);
+  },
+
+  setImagePreviewScale(nextScale, originX, originY) {
+    const state = this.imagePreviewState;
+    const img = document.getElementById('preview-image');
+    const stage = document.getElementById('preview-image-stage');
+    if (!img || !stage) return;
+
+    const previousScale = state.scale;
+    state.scale = Math.min(state.maxScale, Math.max(state.minScale, nextScale));
+    if (originX != null && originY != null && previousScale > 0 && state.scale !== previousScale) {
+      const stageRect = stage.getBoundingClientRect();
+      const offsetX = originX - stageRect.left - stageRect.width / 2;
+      const offsetY = originY - stageRect.top - stageRect.height / 2;
+      const ratio = state.scale / previousScale;
+      state.translateX = (state.translateX - offsetX) * ratio + offsetX;
+      state.translateY = (state.translateY - offsetY) * ratio + offsetY;
+    }
+    this.applyImagePreviewTransform();
+  },
+
+  toggleImagePreviewZoom(originX, originY) {
+    const state = this.imagePreviewState;
+    if (state.scale > state.minScale + 0.01) {
+      this.resetImagePreviewTransform();
+      return;
+    }
+    this.setImagePreviewScale(2, originX, originY);
+  },
+
+  resetImagePreviewTransform() {
+    const img = document.getElementById('preview-image');
+    const state = this.imagePreviewState;
+    state.scale = state.minScale;
+    state.translateX = 0;
+    state.translateY = 0;
+    state.isDragging = false;
+    state.pinchStartDistance = 0;
+    state.lastTapAt = 0;
+    if (img) {
+      img.classList.remove('is-dragging', 'is-zoomed');
+      img.style.transform = 'translate(0px, 0px) scale(1)';
     }
   },
 
@@ -110,6 +302,8 @@ window.PassworderPreviewMethods = {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const img = document.getElementById('preview-image');
+        this.initImagePreviewInteractions();
+        this.resetImagePreviewTransform();
         if (this.currentPreviewUrl) URL.revokeObjectURL(this.currentPreviewUrl);
         this.currentPreviewUrl = url;
         img.src = url;
@@ -148,13 +342,8 @@ window.PassworderPreviewMethods = {
       const res = await fetch(`/api/note-attachments/${attachmentId}`, { headers: this.token ? { 'Authorization': this.token } : {} });
       if (!res.ok) throw new Error('下载失败');
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
       const att = this.getNoteAttachment(attachmentId);
-      a.download = att ? att.originalName : 'attachment';
-      a.click();
-      URL.revokeObjectURL(url);
+      await window.PassworderShared.saveBlob(blob, att ? att.originalName : 'attachment', blob.type);
       this.showToast('success', '下载已开始');
     } catch (e) {
       this.showToast('error', '下载失败');
@@ -243,6 +432,8 @@ window.PassworderPreviewMethods = {
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
         const url = URL.createObjectURL(blob);
         const img = document.getElementById('preview-image');
+        this.initImagePreviewInteractions();
+        this.resetImagePreviewTransform();
         if (this.currentPreviewUrl) URL.revokeObjectURL(this.currentPreviewUrl);
         this.currentPreviewUrl = url;
         this.currentPreviewNote = note;
@@ -308,12 +499,7 @@ window.PassworderPreviewMethods = {
       const res = await fetch(`/api/files/${note.id}`, { headers: this.token ? { 'Authorization': this.token } : {} });
       if (!res.ok) throw new Error('下载失败');
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = note.originalName || 'attachment';
-      a.click();
-      URL.revokeObjectURL(url);
+      await window.PassworderShared.saveBlob(blob, note.originalName || 'attachment', blob.type);
       this.showToast('success', '下载已开始');
     } catch (e) {
       this.showToast('error', '下载失败');

@@ -98,6 +98,15 @@
 - 选择之前导出的 JSON、CSV 或 ZIP 文件
 - 确认导入
 
+## Android 使用
+
+发布页会提供两个 APK：
+
+- `passworder-android-arm64-release.apk`：适合大多数现代安卓设备。
+- `passworder-android-arm32-release.apk`：适合仅支持 32 位 ARM 的旧设备。
+
+Android 版会在应用私有目录中启动本地服务并通过内置 WebView 使用，数据库和附件存储在应用数据目录内。
+
 ## 快捷键
 
 - `Escape`：关闭弹窗

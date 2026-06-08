@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"embed"
 	"encoding/json"
 	"io/fs"
 	"net/http"
@@ -20,7 +19,7 @@ type Router struct {
 	*mux.Router
 }
 
-func NewRouter(cfg *config.Config, db *sqlx.DB, fileStore *storage.FileStorage, staticFS embed.FS) *Router {
+func NewRouter(cfg *config.Config, db *sqlx.DB, fileStore *storage.FileStorage, staticFS fs.FS) *Router {
 	r := &Router{Router: mux.NewRouter()}
 
 	authRepo := repository.NewAuthRepository(db)

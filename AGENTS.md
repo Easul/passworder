@@ -11,12 +11,7 @@ Go backend + embedded static UI for password/account management and note taking.
 ```
 .
 ├── cmd/server/           # Server entry point
-│   ├── main.go
-│   ├── static/           # Embedded frontend (HTML/JS/CSS)
-│   │   ├── index.html
-│   │   ├── css/style.css
-│   │   └── js/app.js
-│   └── migrations/       # Database migrations (auto-run on startup)
+│   └── main.go
 ├── internal/
 │   ├── config/           # Configuration management
 │   ├── database/         # Database connection & migrations
@@ -26,6 +21,7 @@ Go backend + embedded static UI for password/account management and note taking.
 │   ├── model/            # Data models
 │   └── storage/          # File storage
 ├── dist/                 # Build output (not committed)
+├── mobile/               # Mobile projects and gomobile bridge
 ├── docs/                 # Documentation
 ├── test/                 # Test data directory (not committed)
 └── temp/                 # Temporary files (not committed)
@@ -35,17 +31,17 @@ Go backend + embedded static UI for password/account management and note taking.
 | Task | Location | Notes |
 |------|----------|-------|
 | Add API endpoint | internal/handler/*.go | Follow existing handler pattern |
-| Change DB schema | cmd/server/migrations/*.sql | Add migration file, auto-runs on startup |
-| Modify frontend | cmd/server/static/js/app.js | Main frontend logic |
-| Modify UI HTML | cmd/server/static/index.html | Modal and page structures |
-| Modify styles | cmd/server/static/css/style.css | Custom CSS variables for theming |
+| Change DB schema | internal/embedded/assets/migrations/*.sql | Add migration file, auto-runs on startup |
+| Modify frontend | internal/embedded/assets/static/js/app.js | Main frontend logic |
+| Modify UI HTML | internal/embedded/assets/static/index.html | Modal and page structures |
+| Modify styles | internal/embedded/assets/static/css/style.css | Custom CSS variables for theming |
 | Add model | internal/model/model.go | Add struct with db/json tags |
 | Add repository | internal/repository/*.go | Follow existing SQL const pattern |
 | Add service | internal/service/*.go | Business logic layer |
 
 ## DATABASE MIGRATIONS
 
-**Location**: `cmd/server/migrations/`
+**Location**: `internal/embedded/assets/migrations/`
 
 SQL files in this directory are automatically executed on server startup:
 - Files ending with `.up.sql` are applied in alphabetical order
@@ -95,7 +91,7 @@ mkdir -p test/$(date +%Y%m%d%H%M%S)
 
 ## CONVENTIONS
 - Go 1.20; module name `passworder`
-- SQL migrations as numbered `.up.sql` files in `cmd/server/migrations/`
+- SQL migrations as numbered `.up.sql` files in `internal/embedded/assets/migrations/`
 - JSON responses built via `model.Response` struct (Type/Message/Data)
 - Frontend uses vanilla JS with MDUI-style CSS
 - Chinese UI strings throughout

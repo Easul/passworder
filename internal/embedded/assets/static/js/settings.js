@@ -115,12 +115,7 @@ window.PassworderSettingsMethods = {
         ? decodeURIComponent(utf8Match[1])
         : (plainMatch ? plainMatch[1] : `passworder-export-${new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)}.zip`);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      await window.PassworderShared.saveBlob(blob, filename, blob.type || 'application/zip');
       if (loadingToast) loadingToast.remove();
       this.showToast('success', '导出成功');
     } catch (e) {

@@ -41,6 +41,7 @@ window.PassworderUiMethods = {
     document.getElementById(id).classList.remove('active');
     document.body.style.overflow = '';
     if (id === 'image-preview-modal') {
+      this.resetImagePreviewTransform?.();
       const img = document.getElementById('preview-image');
       if (img) img.src = '';
       if (this.currentPreviewUrl) {

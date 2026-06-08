@@ -14,7 +14,7 @@ import (
 
 func Open(dbPath string) (*sqlx.DB, error) {
 	driver := "sqlite3"
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" || runtime.GOOS == "android" {
 		driver = "sqlite"
 	}
 	db, err := sqlx.Connect(driver, dbPath+"?_fk=1&busy_timeout=5000")

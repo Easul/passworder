@@ -1,5 +1,14 @@
 # 更新日志
 
+## 未发布
+
+### 改进
+
+- 将嵌入式服务与移动端 gomobile 绑定整理到 `internal/embedded` 和 `mobile/bridge`，减少根目录散落 Go 文件。
+- 新增 Linux/macOS/Windows amd64 构建脚本，以及 Android arm32/arm64 AAR/APK 构建脚本。
+- GitHub Actions 增加 Android arm32/arm64 APK 构建，APK 版本名使用 `tag+6位commit`，版本号使用 `5000 + main 分支提交数`。
+- `.gitignore` 补充 Android、Gradle、gomobile 生成产物，避免提交中间构建文件。
+
 ## v1.1.0 (2026-05-03)
 
 ### 新增功能

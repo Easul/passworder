@@ -321,8 +321,10 @@
                     <h3 class="modal-title">图片预览</h3>
                     <button type="button" class="modal-close" onclick="Passworder.closeModal('image-preview-modal')">×</button>
                 </div>
-                <div class="modal-body" style="text-align:center;max-height:80vh;overflow:auto">
-                    <img id="preview-image" style="max-width:90vw;max-height:70vh;object-fit:contain" alt="预览">
+                <div class="modal-body image-preview-modal-body">
+                    <div class="preview-image-stage" id="preview-image-stage">
+                        <img id="preview-image" alt="预览">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('image-preview-modal')">关闭</button>

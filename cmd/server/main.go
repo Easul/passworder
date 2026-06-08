@@ -1,38 +1,18 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"passworder/internal/config"
+	"passworder/internal/embedded"
 )
-
-//go:embed static/*
-//go:embed static/css/*
-//go:embed static/js/*
-//go:embed static/vendor/*
-//go:embed static/vendor/vditor/*
-//go:embed static/vendor/vditor/dist/*
-//go:embed static/vendor/vditor/dist/js/*
-//go:embed static/vendor/vditor/dist/js/i18n/*
-//go:embed static/vendor/vditor/dist/js/icons/*
-//go:embed static/vendor/vditor/dist/js/lute/*
-//go:embed static/vendor/vditor/dist/css/*
-//go:embed static/vendor/vditor/dist/css/content-theme/*
-var staticFS embed.FS
-
-//go:embed all:migrations/*.sql
-var migrationsFS embed.FS
-
-const Version = "v1.0.2"
 
 func main() {
 	flags := parseServerFlags()
 	if flags.showVersion {
-		fmt.Println(Version)
+		fmt.Println(embedded.Version)
 		os.Exit(0)
 	}
 
@@ -40,29 +20,24 @@ func main() {
 	initialCfg := config.LoadFromEnvAndDefaults(overrides)
 
 	if flags.resetPassword {
-		if err := resetMasterPassword(initialCfg.DBPath); err != nil {
+		if err := embedded.ResetMasterPassword(initialCfg.DBPath); err != nil {
 			log.Fatalf("Failed to reset password: %v", err)
 		}
 		os.Exit(0)
 	}
 
-	db, err := openDatabase(initialCfg)
+	server, err := embedded.NewEmbeddedServer(overrides)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.Close()
-
-	cfg := loadRuntimeConfig(db, initialCfg, overrides)
-	router, err := createServerRouter(cfg, db, staticFS)
-	if err != nil {
-		log.Fatalf("Failed to create server router: %v", err)
+	defer server.Stop()
+	if err := server.Start(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 
-	startAutoReminder(db, cfg.ReminderCheckInterval)
-
-	addr := serverAddress(cfg)
+	addr := fmt.Sprintf("%s:%d", server.Config().Host, server.Config().Port)
 	log.Printf("Server starting on http://%s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
+	if err := server.Wait(); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

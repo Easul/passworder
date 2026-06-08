@@ -41,6 +41,40 @@ window.PassworderShared = {
     return `${dateValue}T${timeValue || '00:00'}`;
   },
 
+  isAndroidApp() {
+    return typeof window.PassworderAndroid !== 'undefined';
+  },
+
+  async saveBlob(blob, filename, mimeType) {
+    const safeFilename = filename || 'download';
+    const resolvedMimeType = mimeType || blob?.type || 'application/octet-stream';
+    if (this.isAndroidApp()) {
+      const base64 = await this.blobToBase64(blob);
+      window.PassworderAndroid.saveBase64File(base64, safeFilename, resolvedMimeType);
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeFilename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result || '';
+        const commaIndex = result.indexOf(',');
+        resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
+
   loadStylesheetOnce(id, href) {
     if (document.getElementById(id)) return;
     const link = document.createElement('link');

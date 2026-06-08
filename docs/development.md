@@ -66,7 +66,7 @@ mkdir -p test/$(date +%Y%m%d)
 
 ## 数据库迁移
 
-迁移文件位于 `cmd/server/migrations/`，按序号执行：
+迁移文件位于 `internal/embedded/assets/migrations/`，按序号执行：
 
 - `001_init.up.sql` — 初始表结构
 - `002_personal_files.up.sql` — 笔记文件表
@@ -84,12 +84,12 @@ mkdir -p test/$(date +%Y%m%d)
 ## 添加新功能的一般流程
 
 1. **模型**：在 `internal/model/model.go` 添加 struct
-2. **迁移**：在 `cmd/server/migrations/` 添加 SQL
+2. **迁移**：在 `internal/embedded/assets/migrations/` 添加 SQL
 3. **数据层**：在 `internal/repository/` 添加 CRUD
 4. **业务层**：在 `internal/service/` 添加逻辑
 5. **接口层**：在 `internal/handler/` 添加 HTTP handler
 6. **路由**：在 `internal/handler/router.go` 注册路由
-7. **前端**：修改 `cmd/server/static/` 下的 HTML/JS/CSS
+7. **前端**：修改 `internal/embedded/assets/static/` 下的 HTML/JS/CSS
 
 ## 前端技术说明
 
@@ -116,23 +116,37 @@ mkdir -p test/$(date +%Y%m%d)
 
 ## 构建发布
 
-### 常用平台构建命令
+### 常用平台构建脚本
 
 ```bash
-# Linux
-CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-linux-amd64 ./cmd/server
-
-# macOS
-CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o dist/passworder-darwin-amd64 ./cmd/server
-
-# Windows（无 CGO 依赖）
-GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/passworder-windows-amd64.exe ./cmd/server
+./scripts/build-linux-amd64.sh
+./scripts/build-macos-amd64.sh
+./scripts/build-windows-amd64.sh
 ```
 
 **说明**：
 - `-ldflags="-s -w"` 用于移除调试信息和符号表，减小二进制体积
 - Linux 和 macOS 需要 CGO 支持 SQLite3
 - Windows 使用纯 Go 的 SQLite 驱动，无需 CGO
+
+### Android 构建
+
+```bash
+# 只构建 gomobile AAR
+./scripts/build-android-server.sh arm32
+./scripts/build-android-server.sh arm64
+
+# 构建 APK
+./scripts/build-android-apk.sh arm32
+./scripts/build-android-apk.sh arm64
+./scripts/build-android-apk.sh all
+```
+
+- `arm32` 对应 `armeabi-v7a`，`arm64` 对应 `arm64-v8a`。
+- gomobile 绑定入口在 `mobile/bridge`。
+- AAR、APK、Gradle build 目录和 keystore 都不提交。
+- APK `versionName` 使用 `tag+6位commit`，例如 `v1.0.4+ab123a`。
+- APK `versionCode` 使用 `5000 + main 分支提交数`，保证 adb 升级时单调递增。
 
 ## 版本规范
 
@@ -141,4 +155,4 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o d
 - 次版本号：新功能添加
 - 修订版本号：bug 修复和小改进
 
-当前版本：v1.0.1
+当前版本：v1.0.2

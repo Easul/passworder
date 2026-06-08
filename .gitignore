@@ -35,3 +35,17 @@ qa-*.md
 
 # opencode
 .sisyphus
+.omo
+
+# Android and gomobile generated artifacts
+/mobile/android/.gradle/
+/mobile/android/build/
+/mobile/android/app/build/
+/mobile/android/app/libs/*.aar
+/mobile/android/app/libs/*-sources.jar
+/mobile/android/local.properties
+/mobile/android/app/*.jks
+/mobile/android/app/upload-keystore.jks
+# Generated APK/AAB packages
+*.apk
+*.aab
