@@ -1,8 +1,6 @@
 package com.passworder
 
 import android.app.Service
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -341,9 +339,7 @@ class TranslatorOverlayService : Service() {
             toast("没有可复制的翻译结果")
             return
         }
-        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("translation", result))
-        toast("翻译结果已复制")
+        ClipboardCopyActivity.start(this, result)
     }
 
     private fun toast(message: String) {

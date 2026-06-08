@@ -316,6 +316,8 @@ func classifyFileType(filename, mimeType string) string {
 		return "archive"
 	case ".pdf", ".doc", ".docx", ".txt", ".csv", ".xls", ".xlsx", ".ppt", ".pptx":
 		return "document"
+	case ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".opus", ".webm":
+		return "audio"
 	}
 
 	if strings.HasPrefix(mimeType, "image/") {
@@ -323,6 +325,9 @@ func classifyFileType(filename, mimeType string) string {
 	}
 	if strings.HasPrefix(mimeType, "text/") {
 		return "document"
+	}
+	if strings.HasPrefix(mimeType, "audio/") {
+		return "audio"
 	}
 
 	return "other"

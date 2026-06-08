@@ -221,7 +221,7 @@ window.PassworderPreviewMethods = {
 
     let html = '<ul class="attachment-list">';
     attachments.forEach(att => {
-      const icon = att.fileType === 'image' ? '🖼️' : att.fileType === 'archive' ? '📦' : att.fileType === 'document' ? '📄' : '📎';
+      const icon = this.getAttachmentIcon(att.fileType || att.mimeType || att.originalName);
       html += `
         <li class="attachment-item">
           <span class="attachment-icon">${icon}</span>
@@ -235,7 +235,7 @@ window.PassworderPreviewMethods = {
 
     pending.forEach((file, idx) => {
       const ext = file.name.split('.').pop().toLowerCase();
-      const icon = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? '🖼️' : ['zip'].includes(ext) ? '📦' : ['pdf', 'doc', 'docx', 'txt', 'csv', 'xls', 'xlsx'].includes(ext) ? '📄' : '📎';
+      const icon = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? '🖼️' : ['zip'].includes(ext) ? '📦' : ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus', 'webm'].includes(ext) ? '🎵' : ['pdf', 'doc', 'docx', 'txt', 'csv', 'xls', 'xlsx'].includes(ext) ? '📄' : '📎';
       html += `
         <li class="attachment-item">
           <span class="attachment-icon">${icon}</span>
@@ -295,7 +295,7 @@ window.PassworderPreviewMethods = {
         }
       }
       if (!att) return this.showToast('error', '附件信息不存在，请刷新页面');
-      const type = (fileType || '').toLowerCase();
+      const type = this.resolveAttachmentType(att, fileType);
       if (type.includes('image')) {
         const res = await fetch(`/api/note-attachments/${attachmentId}/preview`, { headers: this.token ? { 'Authorization': this.token } : {} });
         if (!res.ok) throw new Error('预览失败');
@@ -312,6 +312,8 @@ window.PassworderPreviewMethods = {
         await this.previewArchive(att);
       } else if (type.includes('pdf')) {
         await this.previewPDF(attachmentId, att.originalName);
+      } else if (type.includes('audio')) {
+        await this.previewAudio(att);
       } else if (type.includes('word') || type.includes('document') || type.includes('text') || type.includes('excel') || type.includes('sheet')) {
         await this.previewDocument(att);
       } else {
@@ -339,6 +341,19 @@ window.PassworderPreviewMethods = {
     } catch (e) {
       this.showToast('error', 'PDF预览失败');
     }
+  },
+
+  async previewAudio(att) {
+    const res = await fetch(`/api/note-attachments/${att.id}/preview`, { headers: this.token ? { 'Authorization': this.token } : {} });
+    if (!res.ok) throw new Error('预览失败');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const player = this.createAudioPreviewPlayer();
+    if (this.currentPreviewUrl) URL.revokeObjectURL(this.currentPreviewUrl);
+    this.currentPreviewUrl = url;
+    player.src = url;
+    document.getElementById('audio-preview-title').textContent = `🎵 ${this.escape(att.originalName || '音频')}`;
+    this.openModal('audio-preview-modal');
   },
 
   async downloadNoteAttachment(attachmentId) {
@@ -466,6 +481,15 @@ window.PassworderPreviewMethods = {
         iframe.src = url;
         document.getElementById('pdf-preview-title').textContent = `📄 ${this.escape(note.originalName || 'PDF')}`;
         this.openModal('pdf-preview-modal');
+      } else if (this.isAudioExtension(ext) || (note.mimeType || '').toLowerCase().startsWith('audio/')) {
+        const url = URL.createObjectURL(blob);
+        const player = this.createAudioPreviewPlayer();
+        if (this.currentPreviewUrl) URL.revokeObjectURL(this.currentPreviewUrl);
+        this.currentPreviewUrl = url;
+        this.currentPreviewNote = note;
+        player.src = url;
+        document.getElementById('audio-preview-title').textContent = `🎵 ${this.escape(note.originalName || '音频')}`;
+        this.openModal('audio-preview-modal');
       } else if (['doc', 'docx'].includes(ext)) {
         await this.loadMammoth();
         const arrayBuffer = await blob.arrayBuffer();
@@ -617,6 +641,7 @@ window.PassworderPreviewMethods = {
     if (!fileType) return '📄';
     const type = fileType.toLowerCase();
     if (type.includes('image')) return '🖼️';
+    if (type.includes('audio') || this.isAudioExtension(type.split('.').pop())) return '🎵';
     if (type.includes('pdf')) return '📃';
     if (type.includes('zip') || type.includes('rar') || type.includes('7z')) return '📦';
     if (type.includes('word') || type.includes('document')) return '📝';
@@ -624,6 +649,30 @@ window.PassworderPreviewMethods = {
     if (type.includes('text')) return '📖';
     if (type.includes('code') || type.includes('json') || type.includes('xml')) return '💻';
     return '📄';
+  },
+
+  resolveAttachmentType(att, fileType) {
+    const type = [fileType, att?.fileType, att?.mimeType, att?.originalName]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    if (type.includes('audio/') || type.includes('audio') || this.isAudioExtension((att?.originalName || '').split('.').pop())) return 'audio';
+    return type;
+  },
+
+  isAudioExtension(ext) {
+    return ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus', 'webm'].includes((ext || '').toLowerCase());
+  },
+
+  createAudioPreviewPlayer() {
+    const container = document.getElementById('audio-preview-player-container');
+    container.innerHTML = '';
+    const player = document.createElement('audio');
+    player.controls = true;
+    player.preload = 'metadata';
+    player.style.width = '100%';
+    container.appendChild(player);
+    return player;
   },
 
   formatFileSize(bytes) {

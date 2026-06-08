@@ -448,6 +448,22 @@
             </div>
         </div>
 
+        <div id="audio-preview-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="audio-preview-title">音频播放</h3>
+                    <button type="button" class="modal-close" onclick="Passworder.closeModal('audio-preview-modal')">×</button>
+                </div>
+                <div class="modal-body audio-preview-body">
+                    <div class="audio-preview-icon">🎧</div>
+                    <div id="audio-preview-player-container" class="audio-preview-player-container"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="Passworder.closeModal('audio-preview-modal')">关闭</button>
+                </div>
+            </div>
+        </div>
+
         <div id="toast-container" class="toast-container"></div>
         <div id="translator-panel" class="translator-panel hidden android-only">
             <div class="translator-header">

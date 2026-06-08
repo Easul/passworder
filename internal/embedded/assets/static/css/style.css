@@ -780,7 +780,8 @@ body {
 #image-preview-modal,
 #document-preview-modal,
 #archive-preview-modal,
-#pdf-preview-modal {
+#pdf-preview-modal,
+#audio-preview-modal {
   z-index: 2000;
 }
 
@@ -839,6 +840,31 @@ body {
 
 #preview-image.is-dragging {
   cursor: grabbing;
+}
+
+.audio-preview-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 32px 20px;
+}
+
+.audio-preview-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(79 70 229 / 0.1);
+  color: var(--primary);
+  font-size: 2rem;
+}
+
+.audio-preview-player-container,
+.audio-preview-player-container audio {
+  width: 100%;
 }
 
 /* Markdown Editor Modal */

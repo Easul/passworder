@@ -24,6 +24,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ClipboardCopyActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:finishOnTaskLaunch="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.Passworder.ClipboardCopy" />
+
         <service
             android:name=".TranslatorOverlayService"
             android:exported="false" />

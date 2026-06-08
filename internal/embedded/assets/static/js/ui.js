@@ -55,6 +55,21 @@ window.PassworderUiMethods = {
       }
       this.currentPreviewNote = null;
     }
+    if (id === 'audio-preview-modal') {
+      const player = document.querySelector('#audio-preview-player-container audio');
+      if (player) {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+      }
+      const container = document.getElementById('audio-preview-player-container');
+      if (container) container.innerHTML = '';
+      if (this.currentPreviewUrl) {
+        URL.revokeObjectURL(this.currentPreviewUrl);
+        this.currentPreviewUrl = null;
+      }
+      this.currentPreviewNote = null;
+    }
     if (id === 'markdown-modal') this.currentMarkdownNote = null;
     if (id === 'account-modal') this.resetAccountTextareaFullscreen?.();
     if (id === 'note-modal') {
