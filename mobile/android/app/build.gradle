@@ -6,6 +6,14 @@ plugins {
 def targetAbi = System.getenv('TARGET_ABI') ?: project.findProperty('targetAbi')
 def buildVersionCodeOverride = System.getenv('BUILD_VERSION_CODE') ?: project.findProperty('buildVersionCode')
 def buildVersionLabel = System.getenv('BUILD_VERSION_LABEL') ?: project.findProperty('buildVersionLabel')
+def releaseKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH') ?: project.findProperty('androidKeystorePath')
+def releaseKeystorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: project.findProperty('androidKeystorePassword')
+def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS') ?: project.findProperty('androidKeyAlias')
+def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD') ?: project.findProperty('androidKeyPassword')
+def hasReleaseKeystore = releaseKeystorePath != null && releaseKeystorePath.toString().trim() &&
+        releaseKeystorePassword != null && releaseKeystorePassword.toString().trim() &&
+        releaseKeyAlias != null && releaseKeyAlias.toString().trim() &&
+        releaseKeyPassword != null && releaseKeyPassword.toString().trim()
 def versionCodeOffset = 5000
 def fallbackVersionCode = { ->
     try {
@@ -50,7 +58,10 @@ android {
 
     signingConfigs {
         release {
-            initWith signingConfigs.debug
+            storeFile hasReleaseKeystore ? file(releaseKeystorePath) : null
+            storePassword hasReleaseKeystore ? releaseKeystorePassword.toString() : null
+            keyAlias hasReleaseKeystore ? releaseKeyAlias.toString() : null
+            keyPassword hasReleaseKeystore ? releaseKeyPassword.toString() : null
         }
     }
 

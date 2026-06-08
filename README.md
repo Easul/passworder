@@ -114,6 +114,32 @@ Android 工程位于 `mobile/android/`。Go 服务通过 `mobile/bridge` 使用 
 
 APK 输出到 `dist/android/`。生成的 Gradle 缓存、AAR、APK 和中间构建目录已写入 `.gitignore`，不需要提交。发布流水线使用 `版本标签+6位提交哈希` 作为 `versionName`，使用 `5000 + main 分支提交数` 作为 `versionCode`。
 
+### Android 发布签名
+
+GitHub Actions 构建 release APK 时需要配置发布签名。先在本地生成 keystore，并把 base64 内容和密码写入仓库 Secrets：
+
+```bash
+keytool -genkeypair -v \
+  -keystore passworder-release.keystore \
+  -alias passworder \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+
+base64 -w 0 passworder-release.keystore
+```
+
+在 GitHub 仓库 `Settings` → `Secrets and variables` → `Actions` 中添加：
+
+| Secret | 说明 |
+|--------|------|
+| `ANDROID_KEYSTORE_BASE64` | `passworder-release.keystore` 的 base64 内容 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | key alias，例如 `passworder` |
+| `ANDROID_KEY_PASSWORD` | key 密码 |
+
+keystore 文件和密码不要提交到仓库。release APK 构建必须配置上述签名变量；更换签名证书后，已安装旧证书 APK 的设备需要先卸载再安装。
+
 ## 数据备份
 
 ### 导出数据

@@ -46,6 +46,9 @@ qa-*.md
 /mobile/android/local.properties
 /mobile/android/app/*.jks
 /mobile/android/app/upload-keystore.jks
+*.jks
+*.keystore
+*.p12
 # Generated APK/AAB packages
 *.apk
 *.aab

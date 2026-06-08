@@ -6,6 +6,17 @@ ABI="${1:-all}"
 BUILD_TYPE="${BUILD_TYPE:-release}"
 
 VERSION_OFFSET="${VERSION_OFFSET:-5000}"
+if [[ "${BUILD_TYPE}" == "release" ]]; then
+  missing_signing_env=()
+  [[ -z "${ANDROID_KEYSTORE_PATH:-}" ]] && missing_signing_env+=(ANDROID_KEYSTORE_PATH)
+  [[ -z "${ANDROID_KEYSTORE_PASSWORD:-}" ]] && missing_signing_env+=(ANDROID_KEYSTORE_PASSWORD)
+  [[ -z "${ANDROID_KEY_ALIAS:-}" ]] && missing_signing_env+=(ANDROID_KEY_ALIAS)
+  [[ -z "${ANDROID_KEY_PASSWORD:-}" ]] && missing_signing_env+=(ANDROID_KEY_PASSWORD)
+  if (( ${#missing_signing_env[@]} > 0 )); then
+    echo "Release APK signing requires: ${missing_signing_env[*]}" >&2
+    exit 1
+  fi
+fi
 if [[ -z "${BUILD_VERSION_LABEL:-}" ]]; then
   if [[ -n "${VERSION:-}" ]]; then
     version_base="${VERSION}"
