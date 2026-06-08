@@ -81,7 +81,7 @@ class TranslatorOverlayService : Service() {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             android.graphics.PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -107,7 +107,6 @@ class TranslatorOverlayService : Service() {
                 setStroke(1, Color.rgb(226, 232, 240))
             }
             elevation = dp(8).toFloat()
-            setOnTouchListener(dragListener(params))
         }
 
         val header = LinearLayout(this).apply {
@@ -122,7 +121,8 @@ class TranslatorOverlayService : Service() {
             setTypeface(typeface, Typeface.BOLD)
         }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(Button(this).apply {
-            text = "●"
+            text = "文/A"
+            textSize = 11f
             setOnClickListener { collapseOverlay() }
         }, LinearLayout.LayoutParams(dp(40), dp(36)))
         header.addView(Button(this).apply {
@@ -186,8 +186,8 @@ class TranslatorOverlayService : Service() {
         val oldView = overlayView ?: return
         windowManager.removeView(oldView)
         isCollapsed = true
-        params.width = dp(48)
-        params.height = dp(48)
+        params.width = dp(40)
+        params.height = dp(40)
         val dot = buildCollapsedView(params)
         overlayView = dot
         windowManager.addView(dot, params)
@@ -207,9 +207,11 @@ class TranslatorOverlayService : Service() {
 
     private fun buildCollapsedView(params: WindowManager.LayoutParams): View {
         return TextView(this).apply {
-            text = "🌐"
-            textSize = 22f
+            text = "文/A"
+            textSize = 12f
             gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setTypeface(typeface, Typeface.BOLD)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(Color.rgb(79, 70, 229))

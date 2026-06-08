@@ -469,6 +469,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 TranslatorOverlayService.start(this@MainActivity, baseUrl, apiKey, model)
                 toast("翻译悬浮窗已开启")
+                moveTaskToBack(true)
             }
         }
     }
