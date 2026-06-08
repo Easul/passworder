@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 
@@ -28,7 +29,11 @@ class ClipboardCopyActivity : Activity() {
             clipboard.setPrimaryClip(ClipData.newPlainText("translation", text))
             Toast.makeText(this, "翻译结果已复制", Toast.LENGTH_SHORT).show()
         }
-        finish()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            finishAndRemoveTask()
+        } else {
+            finish()
+        }
         overridePendingTransition(0, 0)
     }
 }

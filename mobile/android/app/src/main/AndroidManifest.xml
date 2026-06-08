@@ -30,6 +30,7 @@
             android:exported="false"
             android:finishOnTaskLaunch="true"
             android:noHistory="true"
+            android:taskAffinity="${applicationId}.clipboard"
             android:theme="@style/Theme.Passworder.ClipboardCopy" />
 
         <service
