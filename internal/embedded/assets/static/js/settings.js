@@ -1,5 +1,6 @@
 window.PassworderSettingsMethods = {
   async showSettings() {
+    this.syncAndroidOnlyVisibility?.();
     await Promise.all([this.loadSenderSettings(), this.loadServerConfig()]);
     this.openModal('settings-modal');
   },
@@ -55,7 +56,10 @@ window.PassworderSettingsMethods = {
       'mail.smtp_username': 'setting-smtp-username',
       'mail.smtp_password': 'setting-smtp-password',
       'mail.from_address': 'setting-from-address',
-      'mail.from_name': 'setting-from-name'
+      'mail.from_name': 'setting-from-name',
+      'translator.base_url': 'setting-translator-base-url',
+      'translator.api_key': 'setting-translator-key',
+      'translator.model': 'setting-translator-model'
     };
 
     Object.entries(mappings).forEach(([key, id]) => {

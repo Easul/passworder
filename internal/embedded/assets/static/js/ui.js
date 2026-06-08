@@ -18,18 +18,23 @@ window.PassworderUiMethods = {
   renderHeaderInto(containerId, activeTab) {
     const header = document.getElementById(containerId);
     if (!header) return;
+    const translatorButton = window.PassworderShared.isAndroidApp()
+      ? '<button class="btn btn-secondary btn-sm nav-btn" onclick="Passworder.showTranslator()">🌐 <span>翻译</span></button>'
+      : '';
     header.innerHTML = `
       <div class="header-content">
         <div class="logo">🔐 Passworder</div>
         <div class="nav-actions">
           <button class="btn btn-secondary btn-sm nav-btn ${activeTab === 'accounts' ? 'active' : ''}" onclick="Passworder.showMain()">🔑 <span>账号</span></button>
           <button class="btn btn-secondary btn-sm nav-btn ${activeTab === 'notes' ? 'active' : ''}" onclick="Passworder.showNotes()">📁 <span>笔记</span></button>
+          ${translatorButton}
           <button class="btn btn-secondary btn-sm nav-btn" onclick="Passworder.loadTrash()">🗑️ <span>回收站</span></button>
           <button class="btn btn-secondary btn-sm nav-btn" onclick="Passworder.showSettings()">⚙️ <span>设置</span></button>
           <button class="btn btn-secondary btn-sm nav-btn" onclick="Passworder.logout()">🚪 <span>退出</span></button>
         </div>
       </div>
     `;
+    this.syncAndroidOnlyVisibility?.();
   },
 
   openModal(id) {

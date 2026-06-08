@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -38,6 +39,8 @@ import java.net.URL
 import java.util.Base64
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -438,6 +441,100 @@ class MainActivity : AppCompatActivity() {
                 restartApp()
             }
         }
+
+        @JavascriptInterface
+        fun translate(requestId: String, baseUrl: String, apiKey: String, model: String, text: String) {
+            thread(name = "passworder-translate") {
+                try {
+                    val translated = requestTranslation(baseUrl, apiKey, model, text)
+                    sendTranslatorResult(requestId, translated, null)
+                } catch (e: Exception) {
+                    Log.e(TAG, "translate failed", e)
+                    sendTranslatorResult(requestId, null, e.message ?: "翻译失败")
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun showTranslatorOverlay(baseUrl: String, apiKey: String, model: String) {
+            runOnUiThread {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this@MainActivity)) {
+                    toast("请开启悬浮窗权限后再次点击翻译")
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName"),
+                    )
+                    startActivity(intent)
+                    return@runOnUiThread
+                }
+                TranslatorOverlayService.start(this@MainActivity, baseUrl, apiKey, model)
+                toast("翻译悬浮窗已开启")
+            }
+        }
+    }
+
+    private fun requestTranslation(baseUrl: String, apiKey: String, model: String, text: String): String {
+        val endpoint = translationEndpoint(baseUrl)
+        val targetLanguage = if (Regex("[\\u4e00-\\u9fff]").containsMatchIn(text)) "English" else "Chinese"
+        val payload = JSONObject()
+            .put("model", model)
+            .put("stream", false)
+            .put(
+                "messages",
+                JSONArray().put(
+                    JSONObject()
+                        .put("role", "user")
+                        .put("content", "Translate the following text into $targetLanguage. Return only the translation, with no explanation.\n\n$text")
+                )
+            )
+            .toString()
+
+        val connection = URL(endpoint).openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 20_000
+            connection.readTimeout = 60_000
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Authorization", "Bearer $apiKey")
+            connection.outputStream.use { output -> output.write(payload.toByteArray(Charsets.UTF_8)) }
+            val responseText = if (connection.responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                val errorText = connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                throw IOException(parseTranslationError(errorText, connection.responseCode))
+            }
+            return JSONObject(responseText)
+                .getJSONArray("choices")
+                .getJSONObject(0)
+                .getJSONObject("message")
+                .getString("content")
+                .trim()
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun translationEndpoint(baseUrl: String): String {
+        val normalized = baseUrl.trim().trimEnd('/')
+        if (normalized.endsWith("/chat/completions") || normalized.endsWith("/completions")) {
+            return normalized
+        }
+        return "$normalized/chat/completions"
+    }
+
+    private fun parseTranslationError(errorText: String, code: Int): String {
+        return try {
+            JSONObject(errorText).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
+                ?: "翻译失败：HTTP $code"
+        } catch (_: Exception) {
+            "翻译失败：HTTP $code"
+        }
+    }
+
+    private fun sendTranslatorResult(requestId: String, content: String?, error: String?) {
+        val script = "window.Passworder?.receiveTranslationResult(${JSONObject.quote(requestId)}, ${JSONObject.quote(content)}, ${JSONObject.quote(error)})"
+        runOnUiThread { webView.evaluateJavascript(script, null) }
     }
 
     private fun consumePendingLanAccessHint(): Boolean {

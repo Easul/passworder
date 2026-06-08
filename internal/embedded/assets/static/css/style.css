@@ -968,6 +968,12 @@ body {
   #markdown-preview {
     min-height: 300px;
   }
+
+  .translator-panel {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
 }
 
 .hidden { display: none !important; }
@@ -1022,6 +1028,48 @@ body {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+}
+
+.translator-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.translator-header,
+.translator-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.translator-header {
+  margin-bottom: 10px;
+}
+
+.translator-input {
+  min-height: 96px;
+  margin-bottom: 10px;
+}
+
+.translator-output {
+  min-height: 72px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .archive-tree {

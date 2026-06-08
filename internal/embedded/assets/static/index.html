@@ -206,6 +206,23 @@
                     <div class="form-group">
                         <button type="button" class="btn btn-primary w-full" onclick="Passworder.saveSenderSettings()">💾 保存邮件设置</button>
                     </div>
+                    <hr class="android-only" style="margin:20px 0;border:none;border-top:1px solid var(--border);display:none">
+                    <h4 class="android-only" style="margin-bottom:16px;color:var(--text-primary);display:none">翻译配置</h4>
+                    <div class="form-group android-only" style="display:none">
+                        <label class="form-label">Base URL</label>
+                        <input type="url" class="form-input" id="setting-translator-base-url" placeholder="https://fufu.iqach.top/v1">
+                    </div>
+                    <div class="form-group android-only" style="display:none">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input" id="setting-translator-key" placeholder="sk-..." autocomplete="off">
+                    </div>
+                    <div class="form-group android-only" style="display:none">
+                        <label class="form-label">Model</label>
+                        <input type="text" class="form-input" id="setting-translator-model" placeholder="mimo-v2.5-pro">
+                    </div>
+                    <div class="form-group android-only" style="display:none">
+                        <button type="button" class="btn btn-primary w-full" onclick="Passworder.saveTranslatorSettings()">💾 保存翻译配置</button>
+                    </div>
                     <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
                     <h4 style="margin-bottom:16px;color:var(--text-primary)">服务器配置</h4>
                     <div class="form-group">
@@ -432,6 +449,19 @@
         </div>
 
         <div id="toast-container" class="toast-container"></div>
+        <div id="translator-panel" class="translator-panel hidden android-only">
+            <div class="translator-header">
+                <strong>翻译</strong>
+                <button type="button" class="modal-close" onclick="Passworder.hideTranslator()">×</button>
+            </div>
+            <textarea id="translator-input" class="form-textarea translator-input" placeholder="输入中文或英文，自动互译"></textarea>
+            <div class="translator-actions">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="Passworder.clearTranslator()">清空</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="Passworder.translateText()">翻译</button>
+            </div>
+            <div id="translator-output" class="translator-output" aria-live="polite"></div>
+            <button type="button" class="btn btn-secondary btn-sm w-full" onclick="Passworder.copyTranslatorResult()">复制结果</button>
+        </div>
     </div>
 
     <script src="/js/shared.js?v=1000"></script>
@@ -440,6 +470,7 @@
     <script src="/js/auth.js?v=1000"></script>
     <script src="/js/accounts.js?v=1000"></script>
     <script src="/js/settings.js?v=1000"></script>
+    <script src="/js/translator.js?v=1000"></script>
     <script src="/js/notes.js?v=1000"></script>
     <script src="/js/note_editor.js?v=1000"></script>
     <script src="/js/preview.js?v=1000"></script>
