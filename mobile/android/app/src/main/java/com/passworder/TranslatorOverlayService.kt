@@ -13,6 +13,7 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -71,7 +72,7 @@ class TranslatorOverlayService : Service() {
     private fun showOverlay() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val params = WindowManager.LayoutParams(
-            dp(280),
+            dp(252),
             WindowManager.LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -79,7 +80,9 @@ class TranslatorOverlayService : Service() {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             android.graphics.PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -91,17 +94,15 @@ class TranslatorOverlayService : Service() {
         val root = buildOverlayView(params)
         overlayView = root
         windowManager.addView(root, params)
-        inputView.requestFocus()
-        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun buildOverlayView(params: WindowManager.LayoutParams): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(8), dp(10), dp(10))
+            setPadding(dp(8), dp(6), dp(8), dp(8))
             background = GradientDrawable().apply {
                 setColor(Color.WHITE)
-                cornerRadius = dp(12).toFloat()
+                cornerRadius = dp(10).toFloat()
                 setStroke(1, Color.rgb(226, 232, 240))
             }
             elevation = dp(8).toFloat()
@@ -110,31 +111,44 @@ class TranslatorOverlayService : Service() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setOnTouchListener(dragListener(params))
+            setOnTouchListener(dragListener(params) { releaseInputFocus() })
         }
         header.addView(TextView(this).apply {
             text = "🌐 翻译"
-            textSize = 15f
+            textSize = 14f
             setTextColor(Color.rgb(15, 23, 42))
             setTypeface(typeface, Typeface.BOLD)
         }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(Button(this).apply {
             text = "文/A"
-            textSize = 11f
-            setOnClickListener { collapseOverlay() }
-        }, LinearLayout.LayoutParams(dp(40), dp(36)))
+            textSize = 10f
+            setOnClickListener {
+                releaseInputFocus()
+                collapseOverlay()
+            }
+        }, LinearLayout.LayoutParams(dp(36), dp(32)))
         header.addView(Button(this).apply {
             text = "×"
-            setOnClickListener { stopSelf() }
-        }, LinearLayout.LayoutParams(dp(40), dp(36)))
+            setOnClickListener {
+                releaseInputFocus()
+                stopSelf()
+            }
+        }, LinearLayout.LayoutParams(dp(36), dp(32)))
         root.addView(header)
 
         inputView = EditText(this).apply {
             hint = "输入中文或英文"
-            textSize = 14f
+            textSize = 13f
             minLines = 2
-            maxLines = 4
+            maxLines = 3
             setSingleLine(false)
+            setTextIsSelectable(true)
+            setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    requestInputFocus()
+                }
+                false
+            }
         }
         root.addView(inputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
@@ -147,6 +161,7 @@ class TranslatorOverlayService : Service() {
             setOnClickListener {
                 inputView.setText("")
                 outputView.text = ""
+                releaseInputFocus()
             }
         })
         translateButton = Button(this).apply {
@@ -157,31 +172,32 @@ class TranslatorOverlayService : Service() {
         root.addView(actions)
 
         outputView = TextView(this).apply {
-            textSize = 14f
+            textSize = 13f
             setTextColor(Color.rgb(15, 23, 42))
             setTextIsSelectable(true)
-            setPadding(dp(8), dp(8), dp(8), dp(8))
+            setPadding(dp(7), dp(7), dp(7), dp(7))
             background = GradientDrawable().apply {
                 setColor(Color.rgb(248, 250, 252))
                 cornerRadius = dp(8).toFloat()
                 setStroke(1, Color.rgb(226, 232, 240))
             }
         }
-        root.addView(outputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(72)).apply {
-            topMargin = dp(6)
-            bottomMargin = dp(6)
+        root.addView(outputView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(60)).apply {
+            topMargin = dp(4)
+            bottomMargin = dp(4)
         })
 
         root.addView(Button(this).apply {
             text = "复制结果"
             setOnClickListener { copyResult() }
-        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40)))
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(36)))
         return root
     }
 
     private fun collapseOverlay() {
         val params = overlayParams ?: return
         val oldView = overlayView ?: return
+        releaseInputFocus()
         windowManager.removeView(oldView)
         isCollapsed = true
         params.width = dp(40)
@@ -196,7 +212,7 @@ class TranslatorOverlayService : Service() {
         val oldView = overlayView ?: return
         windowManager.removeView(oldView)
         isCollapsed = false
-        params.width = dp(280)
+        params.width = dp(252)
         params.height = WindowManager.LayoutParams.WRAP_CONTENT
         val root = buildOverlayView(params)
         overlayView = root
@@ -206,7 +222,7 @@ class TranslatorOverlayService : Service() {
     private fun buildCollapsedView(params: WindowManager.LayoutParams): View {
         return TextView(this).apply {
             text = "文/A"
-            textSize = 12f
+            textSize = 11f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             setTypeface(typeface, Typeface.BOLD)
@@ -215,19 +231,25 @@ class TranslatorOverlayService : Service() {
                 setColor(Color.rgb(79, 70, 229))
             }
             elevation = dp(8).toFloat()
-            setOnTouchListener(dragListener(params) { expandOverlay() })
+            isClickable = true
+            setOnTouchListener(dragListener(params, tapSlop = dp(14)) { expandOverlay() })
         }
     }
 
-    private fun dragListener(params: WindowManager.LayoutParams, onTap: (() -> Unit)? = null): View.OnTouchListener {
+    private fun dragListener(
+        params: WindowManager.LayoutParams,
+        tapSlop: Int = ViewConfiguration.get(this).scaledTouchSlop,
+        onTap: (() -> Unit)? = null,
+    ): View.OnTouchListener {
         var startX = 0
         var startY = 0
         var downRawX = 0f
         var downRawY = 0f
         var moved = false
-        return View.OnTouchListener { _, event ->
+        return View.OnTouchListener { view, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
                     startX = params.x
                     startY = params.y
                     downRawX = event.rawX
@@ -238,14 +260,22 @@ class TranslatorOverlayService : Service() {
                 MotionEvent.ACTION_MOVE -> {
                     val deltaX = event.rawX - downRawX
                     val deltaY = event.rawY - downRawY
-                    moved = moved || kotlin.math.abs(deltaX) > dp(4) || kotlin.math.abs(deltaY) > dp(4)
+                    moved = moved || kotlin.math.abs(deltaX) > tapSlop || kotlin.math.abs(deltaY) > tapSlop
                     params.x = startX + deltaX.toInt()
                     params.y = startY + deltaY.toInt()
                     overlayView?.let { windowManager.updateViewLayout(it, params) }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (!moved) onTap?.invoke()
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                    if (!moved) {
+                        view.performClick()
+                        onTap?.invoke()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
                     true
                 }
                 else -> false
@@ -259,6 +289,7 @@ class TranslatorOverlayService : Service() {
             toast("请输入要翻译的内容")
             return
         }
+        releaseInputFocus()
         outputView.text = "翻译中..."
         translateButton.isEnabled = false
         thread(name = "passworder-overlay-translate") {
@@ -339,7 +370,34 @@ class TranslatorOverlayService : Service() {
             toast("没有可复制的翻译结果")
             return
         }
+        releaseInputFocus()
         ClipboardCopyActivity.start(this, result)
+    }
+
+    private fun requestInputFocus() {
+        val params = overlayParams ?: return
+        if (params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE != 0) {
+            params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+            overlayView?.let { windowManager.updateViewLayout(it, params) }
+        }
+        inputView.requestFocus()
+        inputView.post {
+            (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun releaseInputFocus() {
+        if (::inputView.isInitialized) {
+            inputView.clearFocus()
+            (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(inputView.windowToken, 0)
+        }
+        val params = overlayParams ?: return
+        if (params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE == 0) {
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            overlayView?.let { windowManager.updateViewLayout(it, params) }
+        }
     }
 
     private fun toast(message: String) {
