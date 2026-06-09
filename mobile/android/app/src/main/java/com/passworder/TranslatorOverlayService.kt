@@ -1,5 +1,8 @@
 package com.passworder
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -10,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -33,13 +37,20 @@ class TranslatorOverlayService : Service() {
         private const val EXTRA_BASE_URL = "base_url"
         private const val EXTRA_API_KEY = "api_key"
         private const val EXTRA_MODEL = "model"
+        private const val PREFS_NAME = "translator_overlay"
+        private const val NOTIFICATION_CHANNEL_ID = "translator_overlay"
+        private const val NOTIFICATION_ID = 2001
 
         fun start(context: Context, baseUrl: String, apiKey: String, model: String) {
             val intent = Intent(context, TranslatorOverlayService::class.java)
                 .putExtra(EXTRA_BASE_URL, baseUrl)
                 .putExtra(EXTRA_API_KEY, apiKey)
                 .putExtra(EXTRA_MODEL, model)
-            context.startService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
     }
 
@@ -58,15 +69,66 @@ class TranslatorOverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        baseUrl = intent?.getStringExtra(EXTRA_BASE_URL).orEmpty()
-        apiKey = intent?.getStringExtra(EXTRA_API_KEY).orEmpty()
-        model = intent?.getStringExtra(EXTRA_MODEL).orEmpty()
+        startForeground(NOTIFICATION_ID, buildNotification())
+        restoreConfig()
+        intent?.let { updateConfig(it) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (overlayView == null) {
             showOverlay()
         } else {
             overlayView?.bringToFront()
         }
-        return START_STICKY
+        return START_REDELIVER_INTENT
+    }
+
+    private fun updateConfig(intent: Intent) {
+        val nextBaseUrl = intent.getStringExtra(EXTRA_BASE_URL)
+        val nextApiKey = intent.getStringExtra(EXTRA_API_KEY)
+        val nextModel = intent.getStringExtra(EXTRA_MODEL)
+        if (nextBaseUrl != null) baseUrl = nextBaseUrl
+        if (nextApiKey != null) apiKey = nextApiKey
+        if (nextModel != null) model = nextModel
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putString(EXTRA_BASE_URL, baseUrl)
+            .putString(EXTRA_API_KEY, apiKey)
+            .putString(EXTRA_MODEL, model)
+            .apply()
+    }
+
+    private fun restoreConfig() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        baseUrl = prefs.getString(EXTRA_BASE_URL, baseUrl).orEmpty()
+        apiKey = prefs.getString(EXTRA_API_KEY, apiKey).orEmpty()
+        model = prefs.getString(EXTRA_MODEL, model).orEmpty()
+    }
+
+    private fun buildNotification(): Notification {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    "翻译悬浮窗",
+                    NotificationManager.IMPORTANCE_LOW,
+                )
+            )
+        }
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+        return builder
+            .setSmallIcon(applicationInfo.icon)
+            .setContentTitle("翻译悬浮窗运行中")
+            .setContentText("点悬浮圆圈可展开翻译")
+            .setOngoing(true)
+            .build()
     }
 
     private fun showOverlay() {
