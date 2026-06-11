@@ -2,6 +2,25 @@
 
 ## 未发布
 
+- 暂无。
+
+## v1.0.5 (2026-06-11)
+
+### 新增功能
+
+- **Android 翻译悬浮窗**：设置兼容 OpenAI Chat Completions 的 Base URL、API Key 和 Model 后，可从 Android 顶部「翻译」按钮开启可拖拽、可收起的中英互译悬浮窗。
+- **音频附件预览**：笔记附件支持 mp3、wav、ogg、m4a、aac、flac、opus、webm 在线播放，并使用音频图标区分。
+- **Android PDF 外部打开**：Android 端预览 PDF 时优先通过系统查看器打开，减少 WebView 内嵌 PDF 兼容性问题。
+
+### 改进
+
+- **Android 局域网访问**：Host 设为 `0.0.0.0` 后，应用会重启服务并提示手机可访问 IP，WebView 仍使用本机 `127.0.0.1` 访问内置服务。
+- **翻译复制体验**：悬浮窗复制结果使用独立短生命周期 Activity，避免把 Passworder 拉回前台任务。
+- **翻译悬浮窗稳定性**：优化前台服务保活、收起/展开、点击恢复和输入焦点处理。
+- **附件预览稳定性**：统一通过 `window.JSZip`、`window.mammoth`、`window.XLSX` 使用动态加载库，降低全局变量解析问题。
+
+## v1.0.4 (2026-06-08)
+
 ### 改进
 
 - 将嵌入式服务与移动端 gomobile 绑定整理到 `internal/embedded` 和 `mobile/bridge`，减少根目录散落 Go 文件。

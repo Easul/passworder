@@ -11,9 +11,10 @@
 - 🔐 **安全存储**：数据存储于本地 SQLite 数据库，密码加密存储
 - 📬 **单文件部署**：仅需一个可执行文件，前端资源嵌入后端
 - 📝 **笔记管理**：支持 Markdown 和纯文本格式，集成 Vditor 编辑器
-- 📂 **多文件附件**：每条笔记可关联多个文件，支持图片/压缩包/文档预览
+- 📂 **多文件附件**：每条笔记可关联多个文件，支持图片/音频/压缩包/文档预览
 - ⏰ **邮件提醒**：为账号设置登录提醒日期，到期自动发送邮件通知
 - 🔄 **数据导入导出**：支持 JSON/CSV 格式备份与恢复
+- 📱 **Android 随身使用**：内置本地服务、WebView、局域网访问提示和翻译悬浮窗
 
 ## 快速开始
 
@@ -66,7 +67,8 @@ cd passworder
 
 - **图片**：支持 JPEG、PNG、GIF 等格式预览
 - **压缩包**：ZIP 文件可列出内部文件结构
-- **文档**：支持 Word (docx)、Excel (xlsx)、PDF、文本文件在线预览
+- **音频**：支持 mp3、wav、ogg、m4a、aac、flac、opus、webm 在线播放
+- **文档**：支持 Word (docx)、Excel (xlsx)、PDF、文本文件在线预览；Android 端 PDF 可调用系统查看器打开
 - **下载功能**：所有附件都可下载到本地
 
 ### 邮件提醒
@@ -113,6 +115,17 @@ Android 工程位于 `mobile/android/`。Go 服务通过 `mobile/bridge` 使用 
 ```
 
 APK 输出到 `dist/android/`。生成的 Gradle 缓存、AAR、APK 和中间构建目录已写入 `.gitignore`，不需要提交。发布流水线使用 `版本标签+6位提交哈希` 作为 `versionName`，使用 `5000 + main 分支提交数` 作为 `versionCode`。
+
+Android 版默认在应用内 WebView 访问本机 `127.0.0.1:18080`。如果在「设置」里把 Host 改为 `0.0.0.0`，应用会重启本地服务并提示当前手机可用于局域网访问的 IP 地址。
+
+### Android 翻译悬浮窗
+
+Android 版设置页会显示「翻译配置」，需要填写兼容 OpenAI Chat Completions 的 Base URL、API Key 和 Model。保存后点击顶部「翻译」按钮会请求悬浮窗权限，授权后可在其他 App 上方使用可拖拽、可收起的翻译面板：
+
+- 输入中文会翻译为英文，输入非中文会翻译为中文
+- 翻译请求由 Android 本地发起，接口地址会自动补全 `/chat/completions`
+- 翻译结果可一键复制，复制动作不会把 Passworder 拉回前台任务
+- 悬浮窗以 Android 前台服务运行，可从悬浮窗关闭按钮结束
 
 ### Android 发布签名
 
@@ -181,7 +194,7 @@ keystore 文件和密码不要提交到仓库。release APK 构建必须配置�
 - **后端**：Go 1.20 + Gorilla Mux + SQLite (sqlx)
 - **前端**：原生 JavaScript + MDUI 组件库
 - **编辑器**：Vditor (Markdown 编辑器)
-- **文档预览**：mammoth.js (docx) + SheetJS (xlsx) + 浏览器原生 PDF
+- **文档预览**：mammoth.js (docx) + SheetJS (xlsx) + 浏览器原生 PDF/音频播放
 
 ## 数据库迁移
 

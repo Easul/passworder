@@ -147,6 +147,9 @@ mkdir -p test/$(date +%Y%m%d)
 - AAR、APK、Gradle build 目录和 keystore 都不提交。
 - APK `versionName` 使用 `tag+6位commit`，例如 `v1.0.4+ab123a`。
 - APK `versionCode` 使用 `5000 + main 分支提交数`，保证 adb 升级时单调递增。
+- Android 本地服务有两个 Host 概念：`LOCAL_SERVER_LISTEN_HOST` 控制 Go 服务监听地址，`LOCAL_SERVER_WEB_HOST` 固定为 WebView 访问的 `127.0.0.1`。当设置页把 Host 改为 `0.0.0.0` 时，Android 会重启应用并提示局域网访问 IP。
+- Android 翻译功能由 WebView 的 `PassworderAndroid` JavaScript bridge 调用 Kotlin 侧实现，悬浮窗服务为 `TranslatorOverlayService`，配置存储在通用 settings 中的 `translator.base_url`、`translator.api_key`、`translator.model`。
+- Android PDF 外部预览通过 `FileProvider` 暂存到应用 cache 的 `preview/` 目录，Activity 返回后会清理缓存。
 
 ## 版本规范
 
@@ -155,4 +158,4 @@ mkdir -p test/$(date +%Y%m%d)
 - 次版本号：新功能添加
 - 修订版本号：bug 修复和小改进
 
-当前版本：v1.0.2
+当前版本：v1.0.5
