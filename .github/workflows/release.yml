@@ -12,7 +12,7 @@ on:
       version:
         description: 'Version (e.g., v1.0.0)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.5'
 
 jobs:
   build-linux-windows:
@@ -186,7 +186,7 @@ jobs:
         run: ls -la dist/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           generate_release_notes: true
@@ -213,6 +213,13 @@ jobs:
             ### Android APK
             - `passworder-android-arm32-release.apk`：armeabi-v7a
             - `passworder-android-arm64-release.apk`：arm64-v8a
+
+            Android 版包含内置 WebView、本地服务、局域网访问提示，以及可选的翻译悬浮窗。使用翻译悬浮窗前，请先在「设置」中填写兼容 OpenAI Chat Completions 的 Base URL、API Key 和 Model，并按系统提示开启悬浮窗权限。
+
+            ### v1.0.5 重点变化
+            - Android 新增可拖拽、可收起的中英互译悬浮窗。
+            - Android Host 设为 `0.0.0.0` 后会提示局域网访问 IP。
+            - 附件预览新增音频播放，Android PDF 优先调用系统查看器。
 
             ### 配置参数
             | 参数 | 说明 |
